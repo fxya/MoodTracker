@@ -1,25 +1,25 @@
 package com.example.moodtracker.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 import java.time.Instant;
 
 @Entity
 public class Mood {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private String mood;
     private Instant date;
+    @OneToOne(cascade = CascadeType.ALL)
+    private Weather weather;
 
     public Mood() {}
 
-    public Mood(String mood, Instant date) {
+    public Mood(String mood, Instant date, Weather weather) {
         this.mood = mood;
         this.date = date;
+        this.weather = weather;
     }
 
     public Long getId() {
@@ -40,6 +40,14 @@ public class Mood {
 
     public void setDate(Instant date) {
         this.date = date;
+    }
+
+    public Weather getWeather() {
+        return weather;
+    }
+
+    public void setWeather(Weather weather) {
+        this.weather = weather;
     }
 
 }
