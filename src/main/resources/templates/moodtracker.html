@@ -7,17 +7,6 @@
 <body>
 <h1 th:inline="text">Hello <span th:remove="tag" sec:authentication="name">thymeleaf</span>!</h1>
 <p id="currentDateTime">The current date and time is: </p>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const dateTimeElement = document.getElementById("currentDateTime");
-        const currentDateTime = new Date().toISOString();
-        dateTimeElement.innerHTML += currentDateTime;
-
-        // Set the hidden input field value
-        document.getElementById("clientCurrentDateTime").value = currentDateTime;
-    });
-</script>
-
 
 <!-- Mood Logging Form -->
 <form id="moodForm" th:action="@{/api/moods}" method="post">
@@ -35,4 +24,5 @@
     <input type="submit" value="Sign Out"/>
 </form>
 </body>
+<script src="/js/moodtracker.js"></script>
 </html>

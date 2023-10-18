@@ -12,12 +12,14 @@
                 data.forEach(mood => {
                   const row = document.createElement('tr');
                   const dateCell = document.createElement('td');
+                  const emptyCell = document.createElement('td');
                   const moodCell = document.createElement('td');
 
-                  dateCell.textContent = mood.date; // Make sure to format the date
+                  dateCell.textContent = mood.date;
                   moodCell.textContent = mood.mood;
 
                   row.appendChild(dateCell);
+                  row.appendChild(emptyCell);
                   row.appendChild(moodCell);
                   tableBody.appendChild(row);
                 });
@@ -32,6 +34,7 @@
   <thead>
   <tr>
     <th>Date</th>
+    <th>    </th>
     <th>Mood</th>
   </tr>
   </thead>
