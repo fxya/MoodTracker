@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.util.Date;
 import java.util.List;
 
@@ -27,21 +30,24 @@ public class MoodAPIController {
 
     @PostMapping("/api/moods")
     public RedirectView addMood(@RequestParam("moodEntry") String moodEntry,
-                          @RequestParam("clientCurrentDateTime") String currentDateString) {
+                                @RequestParam("clientCurrentDateTime") String currentDateString) {
 
-        // Convert the string date to a Date object. Adjust the format as needed.
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-        Date currentDate;
+        // Use java.time's DateTimeFormatter to parse the date string
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+        Instant currentDate;
 
         try {
-            currentDate = formatter.parse(currentDateString);
+            TemporalAccessor accessor = formatter.parse(currentDateString);
+            currentDate = Instant.from(accessor);
         } catch (Exception e) {
             // Handle date parsing error
             return new RedirectView("/error");
         }
+
         // Create a Mood object and save
         Mood mood = new Mood(moodEntry, currentDate);
         moodRepository.save(mood);
+
         return new RedirectView("/moods");
     }
 
