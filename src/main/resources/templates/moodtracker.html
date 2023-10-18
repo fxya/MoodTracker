@@ -2,11 +2,35 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
       xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
 <head>
-    <title>Hello World!</title>
+    <title>Mood Tracker</title>
 </head>
 <body>
 <h1 th:inline="text">Hello <span th:remove="tag" sec:authentication="name">thymeleaf</span>!</h1>
-<p th:text="'The current date and time is: ' + ${#dates.createNow()}"></p>
+<p id="currentDateTime">The current date and time is: </p>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const dateTimeElement = document.getElementById("currentDateTime");
+        const currentDateTime = new Date().toISOString();
+        dateTimeElement.innerHTML += currentDateTime;
+
+        // Set the hidden input field value
+        document.getElementById("clientCurrentDateTime").value = currentDateTime;
+    });
+</script>
+
+
+<!-- Mood Logging Form -->
+<form id="moodForm" th:action="@{/api/moods}" method="post">
+    <label for="mood">Log mood:</label><br>
+    <textarea id="mood" name="moodEntry" rows="4" cols="50"></textarea>
+
+    <!-- Hidden input field for current date and time -->
+    <input type="hidden" id="clientCurrentDateTime" name="clientCurrentDateTime" /><br>
+    <input type="submit" value="Submit"/>
+</form>
+
+
+<!-- Logout Form -->
 <form th:action="@{/logout}" method="post">
     <input type="submit" value="Sign Out"/>
 </form>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head>
+  <title>All Moods</title>
+  <script>
+    // Fetch all moods from the API client-side
+    document.addEventListener('DOMContentLoaded', function() {
+      fetch('/api/moods')
+              .then(response => response.json())
+              .then(data => {
+                const tableBody = document.querySelector('tbody');
+                data.forEach(mood => {
+                  const row = document.createElement('tr');
+                  const dateCell = document.createElement('td');
+                  const moodCell = document.createElement('td');
+
+                  dateCell.textContent = mood.date; // Make sure to format the date
+                  moodCell.textContent = mood.mood;
+
+                  row.appendChild(dateCell);
+                  row.appendChild(moodCell);
+                  tableBody.appendChild(row);
+                });
+              });
+    });
+  </script>
+</head>
+<body>
+<h1>All Saved Moods</h1>
+
+<table>
+  <thead>
+  <tr>
+    <th>Date</th>
+    <th>Mood</th>
+  </tr>
+  </thead>
+  <tbody>
+  <!-- Content will be populated by JavaScript -->
+  </tbody>
+</table>
+</body>
+</html>

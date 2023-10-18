@@ -5,6 +5,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
+import java.util.Date;
+
 
 @Entity
 public class Mood {
@@ -12,11 +14,11 @@ public class Mood {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String mood;
-    private String date;
+    private Date date;
 
     public Mood() {}
 
-    public Mood(String mood, String date) {
+    public Mood(String mood, Date date) {
         this.mood = mood;
         this.date = date;
     }
@@ -29,7 +31,7 @@ public class Mood {
         return mood;
     }
 
-    public String getDate() {
+    public Date getDate() {
         return date;
     }
 
@@ -37,7 +39,7 @@ public class Mood {
         this.mood = mood;
     }
 
-    public void setDate(String date) {
+    public void setDate(Date date) {
         this.date = date;
     }
 
