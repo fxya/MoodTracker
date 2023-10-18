@@ -10,27 +10,41 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests((requests) -> requests
-                        .requestMatchers("/", "/home").permitAll()
-                        .anyRequest().authenticated()
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, HandlerMappingIntrospector introspector) throws Exception {
+        MvcRequestMatcher h2RequestMatcher = new MvcRequestMatcher(introspector, "/h2-console/**");
+        h2RequestMatcher.setServletPath("/h2-console");
+
+        MvcRequestMatcher homeRequestMatcher = new MvcRequestMatcher(introspector, "/home");
+        homeRequestMatcher.setServletPath("/");
+
+        MvcRequestMatcher rootRequestMatcher = new MvcRequestMatcher(introspector, "/");
+        rootRequestMatcher.setServletPath("/");
+
+        http.authorizeHttpRequests(authorizeRequests ->
+                        authorizeRequests
+                                .requestMatchers(rootRequestMatcher, homeRequestMatcher).permitAll()
+                                .requestMatchers(h2RequestMatcher).permitAll()
+                                .anyRequest().authenticated()
                 )
-                .formLogin((form) -> form
-                        .loginPage("/login")
-                        .defaultSuccessUrl("/moodtracker", true)
-                        .permitAll()
+                .formLogin(formLogin ->
+                        formLogin
+                                .loginPage("/login")
+                                .defaultSuccessUrl("/moodtracker", true)
+                                .permitAll()
                 )
                 .logout(LogoutConfigurer::permitAll);
 
         return http.build();
     }
+
 
     @Bean
     public UserDetailsService userDetailsService() {
