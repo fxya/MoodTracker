@@ -23,7 +23,7 @@ public class WeatherService {
         return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/v1/current.json")
-                        .queryParam("key", "790f798596a94c18a21162940231810")
+                        .queryParam("key", "YOUR_API_KEY")
                         .queryParam("q", location)
                         .build())
                 .retrieve()
