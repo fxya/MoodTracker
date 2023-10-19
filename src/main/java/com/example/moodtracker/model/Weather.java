@@ -13,8 +13,8 @@ public class Weather {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
-    @JsonProperty("location.name")
 
+    @JsonProperty("location.name")
     private String location;
 
     @JsonProperty("current.temp_c")
