@@ -7,6 +7,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 @Service
 public class WeatherService {
@@ -20,21 +23,30 @@ public class WeatherService {
     }
 
     public Mono<Weather> fetchWeather(String location) {
-        return this.webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/v1/current.json")
-                        .queryParam("key", "YOUR_API_KEY")
-                        .queryParam("q", location)
-                        .build())
-                .retrieve()
-                .bodyToMono(String.class)  // Retrieve the body as a String
-                .flatMap(jsonString -> {
-                    try {
-                        Weather weather = objectMapper.readValue(jsonString, Weather.class);
-                        return Mono.just(weather);
-                    } catch (IOException e) {
-                        return Mono.error(e);
-                    }
-                });
+        return Mono.fromCallable(this::readApiKey)
+                .flatMap(apiKey -> this.webClient.get()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/v1/current.json")
+                                .queryParam("key", apiKey)
+                                .queryParam("q", location)
+                                .build())
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .flatMap(jsonString -> {
+                            try {
+                                Weather weather = objectMapper.readValue(jsonString, Weather.class);
+                                return Mono.just(weather);
+                            } catch (IOException e) {
+                                return Mono.error(e);
+                            }
+                        })
+                );
     }
+
+    private String readApiKey() throws IOException {
+        try (Stream<String> lines = Files.lines(Paths.get(".apikey"))) {
+            return lines.findFirst().orElseThrow(() -> new IOException("API key not found in file"));
+        }
+    }
+
 }
