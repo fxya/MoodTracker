@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Register</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+    <div class="container">
+        <h1>Register New User</h1>
+        <form th:action="@{/register}" method="post" th:object="${user}"> <!-- Assuming a UserController handles /register -->
+            <div>
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" th:field="*{username}" required autofocus/>
+                <!-- Display validation errors if any -->
+            </div>
+            <div>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" th:field="*{password}" required/>
+            </div>
+            <div>
+                <button type="submit">Register</button>
+            </div>
+        </form>
+        <p>Already have an account? <a th:href="@{/login}">Login here</a></p>
+    </div>
+</body>
+</html>
