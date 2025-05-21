@@ -1,41 +1,47 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
-      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity6">
 <head>
     <title>Mood Tracker</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
 <body>
-<h1 th:inline="text">Hello <span th:remove="tag" sec:authentication="name">thymeleaf</span>!</h1>
-<p id="currentDateTime">The current date and time is: </p>
+    <div class="container">
+        <div class="header">
+            <span>Hi, <strong sec:authentication="name">User</strong>!</span>
+            <form th:action="@{/logout}" method="post" style="display: inline;">
+                <button type="submit">Logout</button>
+            </form>
+        </div>
 
-<!-- Mood Logging Form -->
-<form id="moodForm" th:action="@{/api/moods}" method="post">
-    <label for="mood">Log mood:</label><br>
-    <textarea id="mood" name="moodEntry" rows="4" cols="50"></textarea><br>
+        <h1>Mood Tracker</h1>
 
-    <label for="moodRating">Rate your mood (1-10):</label><br>
-    <select id="moodRating" name="moodRating">
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-        <option value="8">8</option>
-        <option value="9">9</option>
-        <option value="10">10</option>
-    </select><br>
+        <h2>Add New Mood</h2>
+        <form th:action="@{/moodtracker/add}" th:object="${newMood}" method="post">
+            <div>
+                <label for="mood-text">Mood:</label>
+                <input type="text" id="mood-text" th:field="*{mood}" required/>
+            </div>
+            <div>
+                <label for="mood-rating">Rating (1-10):</label>
+                <input type="number" id="mood-rating" th:field="*{moodRating}" min="1" max="10" required/>
+            </div>
+            <!-- Weather related fields can be added here if desired -->
+            <button type="submit">Save Mood</button>
+        </form>
 
-    <!-- Hidden input field for current date and time -->
-    <input type="hidden" id="clientCurrentDateTime" name="clientCurrentDateTime" /><br>
-    <input type="submit" value="Submit"/>
-</form>
-
-<!-- Logout Form -->
-<form th:action="@{/logout}" method="post">
-    <input type="submit" value="Sign Out"/>
-</form>
+        <h2>Your Moods</h2>
+        <div th:if="${#lists.isEmpty(moods)}">
+            <p>You haven't recorded any moods yet.</p>
+        </div>
+        <ul th:unless="${#lists.isEmpty(moods)}">
+            <li th:each="mood : ${moods}">
+                <span th:text="${#temporals.format(mood.date, 'dd-MMM-yyyy HH:mm')}">Date</span> -
+                Mood: <span th:text="${mood.mood}">Mood Text</span> -
+                Rating: <span th:text="${mood.moodRating}">Rating</span>
+                <!-- Display weather info if available and needed -->
+                <!-- <span th:if="${mood.weather}" th:text="' - Weather: ' + ${mood.weather.description}">Weather</span> -->
+            </li>
+        </ul>
+    </div>
 </body>
-<script src="/js/moodtracker.js"></script>
 </html>
