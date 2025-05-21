@@ -33,14 +33,14 @@ public class MoodAPIController {
     }
 
     @PostMapping("/api/moods")
-    public Mono<RedirectView> addMood(@RequestParam("moodEntry") String moodEntry,
+    public Mono<RedirectView> addMood(@RequestParam("mood") String moodEntry,
                                       @RequestParam("moodRating") Integer moodRating,
-                                      @RequestParam("clientCurrentDateTime") String currentDateString) {
+                                      @RequestParam("clientCurrentDateTime") String currentDateString,
+                                      @RequestParam("location") String location) {
 
         // Use java.time's DateTimeFormatter to parse the date string
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
         Instant currentDate;
-        String location = "London";
 
         try {
             TemporalAccessor accessor = formatter.parse(currentDateString);
