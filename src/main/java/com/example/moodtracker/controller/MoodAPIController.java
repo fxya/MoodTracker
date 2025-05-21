@@ -51,7 +51,7 @@ public class MoodAPIController {
         return weatherService.fetchWeather(location)
                 .flatMap(weatherData -> {
                     // Create a Mood object and save
-                    Mood mood = new Mood(moodEntry, currentDate, weatherData);
+                    Mood mood = new Mood(null, moodEntry, currentDate, weatherData);
                     moodRepository.save(mood);
 
                     return Mono.just(new RedirectView("/moods"));
