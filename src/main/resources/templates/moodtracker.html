@@ -16,7 +16,7 @@
         <h1>Mood Tracker</h1>
 
         <h2>Add New Mood</h2>
-        <form th:action="@{/moodtracker/add}" th:object="${newMood}" method="post">
+        <form th:action="@{/api/moods}" th:object="${newMood}" method="post">
             <div>
                 <label for="mood-text">Mood:</label>
                 <input type="text" id="mood-text" th:field="*{mood}" required/>
@@ -25,6 +25,11 @@
                 <label for="mood-rating">Rating (1-10):</label>
                 <input type="number" id="mood-rating" th:field="*{moodRating}" min="1" max="10" required/>
             </div>
+            <div>
+                <label for="location">Location:</label>
+                <input type="text" id="location" name="location" value="London" required/>
+            </div>
+            <input type="hidden" name="clientCurrentDateTime" id="clientCurrentDateTime"/>
             <!-- Weather related fields can be added here if desired -->
             <button type="submit">Save Mood</button>
         </form>
@@ -43,5 +48,16 @@
             </li>
         </ul>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Assuming there's only one form on the page. If there are multiple, make the selector more specific.
+            var form = document.querySelector('form[th\\:action="@{/api/moods}"]'); 
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    document.getElementById('clientCurrentDateTime').value = new Date().toISOString();
+                });
+            }
+        });
+    </script>
 </body>
 </html>
