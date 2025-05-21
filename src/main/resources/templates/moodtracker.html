@@ -11,7 +11,21 @@
 <!-- Mood Logging Form -->
 <form id="moodForm" th:action="@{/api/moods}" method="post">
     <label for="mood">Log mood:</label><br>
-    <textarea id="mood" name="moodEntry" rows="4" cols="50"></textarea>
+    <textarea id="mood" name="moodEntry" rows="4" cols="50"></textarea><br>
+
+    <label for="moodRating">Rate your mood (1-10):</label><br>
+    <select id="moodRating" name="moodRating">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+    </select><br>
 
     <!-- Hidden input field for current date and time -->
     <input type="hidden" id="clientCurrentDateTime" name="clientCurrentDateTime" /><br>
