@@ -44,8 +44,22 @@ public class WeatherService {
     }
 
     private String readApiKey() throws IOException {
+        // Try to read from environment variable first
+        String apiKey = System.getenv("WEATHER_API_KEY");
+
+        if (apiKey != null && !apiKey.trim().isEmpty()) {
+            return apiKey.trim();
+        }
+
+        // If not found in env, try to read from file
         try (Stream<String> lines = Files.lines(Paths.get(".apikey"))) {
-            return lines.findFirst().orElseThrow(() -> new IOException("API key not found in file"));
+            return lines.findFirst()
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .orElseThrow(() -> new IOException("API key not found in environment variable WEATHER_API_KEY or in .apikey file"));
+        } catch (IOException e) {
+            // Catch IOException from file reading and re-throw a more general one if env var also failed
+            throw new IOException("API key not found in environment variable WEATHER_API_KEY and file .apikey could not be read. Error: " + e.getMessage(), e);
         }
     }
 
