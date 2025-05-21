@@ -17,6 +17,7 @@ public class Mood {
     private Long id;
     private String mood;
     private Instant date;
+    private Integer moodRating;
     @OneToOne(cascade = CascadeType.ALL)
     private Weather weather;
 }

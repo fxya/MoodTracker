@@ -34,6 +34,7 @@ public class MoodAPIController {
 
     @PostMapping("/api/moods")
     public Mono<RedirectView> addMood(@RequestParam("moodEntry") String moodEntry,
+                                      @RequestParam("moodRating") Integer moodRating,
                                       @RequestParam("clientCurrentDateTime") String currentDateString) {
 
         // Use java.time's DateTimeFormatter to parse the date string
@@ -51,7 +52,7 @@ public class MoodAPIController {
         return weatherService.fetchWeather(location)
                 .flatMap(weatherData -> {
                     // Create a Mood object and save
-                    Mood mood = new Mood(null, moodEntry, currentDate, weatherData);
+                    Mood mood = new Mood(null, moodEntry, currentDate, moodRating, weatherData);
                     moodRepository.save(mood);
 
                     return Mono.just(new RedirectView("/moods"));
