@@ -19,15 +19,6 @@ COPY build/libs/*.jar app.jar
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
 
-# Create a volume for the .apikey file if it's not already part of the image
-# This assumes the application will look for .apikey in the working directory (/app)
-# Alternatively, the key can be passed as an environment variable (more secure for production)
-# For now, we'll assume it needs to be present in /app
-# RUN touch /app/.apikey && chown appuser:appgroup /app/.apikey
-
-# Copy the .apikey file into the /app directory
-COPY .apikey /app/.apikey
-
 # Change to the non-root user
 USER appuser
 
