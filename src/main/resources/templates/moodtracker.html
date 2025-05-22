@@ -29,6 +29,10 @@
                 <label for="location">Location:</label>
                 <input type="text" id="location" name="location" value="London" required/>
             </div>
+            <div>
+                <label for="notes">Notes:</label>
+                <textarea id="notes" th:field="*{notes}" rows="3"></textarea>
+            </div>
             <input type="hidden" name="clientCurrentDateTime" id="clientCurrentDateTime"/>
             <!-- Weather related fields can be added here if desired -->
             <button type="submit">Save Mood</button>
@@ -45,6 +49,7 @@
                 Rating: <span th:text="${mood.moodRating}">Rating</span>
                 <!-- Display weather info if available and needed -->
                 <!-- <span th:if="${mood.weather}" th:text="' - Weather: ' + ${mood.weather.description}">Weather</span> -->
+                <p th:if="${mood.notes != null && !mood.notes.isEmpty()}" style="margin-top: 5px; margin-bottom: 0;">Notes: <span th:text="${mood.notes}"></span></p>
             </li>
         </ul>
     </div>

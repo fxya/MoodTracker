@@ -18,6 +18,7 @@ CREATE TABLE mood (
     mood VARCHAR(255),
     date TIMESTAMP,
     mood_rating INTEGER,
+    notes TEXT,
     weather_id BIGINT,
     user_id BIGINT,
     CONSTRAINT fk_weather FOREIGN KEY(weather_id) REFERENCES weather(id),
