@@ -11,15 +11,15 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
-import tools.jackson.databind.ObjectMapper;
 
 import java.net.URI;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
-import static org.junit.jupiter.api.Assertions.*;
 
 class WeatherServiceTest {
 
@@ -33,8 +33,6 @@ class WeatherServiceTest {
     private WebClient.RequestHeadersSpec requestHeadersSpec;
     @Mock
     private WebClient.ResponseSpec responseSpec;
-    @Mock
-    private ObjectMapper objectMapper;
 
     private WeatherService weatherService;
 
@@ -42,71 +40,65 @@ class WeatherServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
+        // WeatherService builds two WebClient instances (geocoding + forecast) off
+        // the same builder; both resolve to this one mocked client/response chain,
+        // distinguished below only by which response type each call requests.
         when(webClientBuilder.baseUrl(anyString())).thenReturn(webClientBuilder);
         when(webClientBuilder.build()).thenReturn(webClient);
         when(webClient.get()).thenReturn(requestHeadersUriSpec);
-
         when(requestHeadersUriSpec.uri(any(Function.class))).thenAnswer(invocation -> {
             Function<UriBuilder, URI> uriFunction = invocation.getArgument(0);
             uriFunction.apply(UriComponentsBuilder.newInstance());
             return requestHeadersSpec;
         });
-
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
 
-        weatherService = new WeatherService(webClientBuilder, objectMapper);
+        weatherService = new WeatherService(webClientBuilder);
     }
 
+    private void mockGeocodingResult(double latitude, double longitude) {
+        WeatherService.GeocodingResponse response = new WeatherService.GeocodingResponse(
+                List.of(new WeatherService.GeocodingResult(latitude, longitude)));
+        when(responseSpec.bodyToMono(WeatherService.GeocodingResponse.class)).thenReturn(Mono.just(response));
+    }
 
     @Test
-    void fetchWeather_ShouldReturnWeatherObject_WhenApiCallIsSuccessful() {
-        String sampleJsonResponse = "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\"," +
-                "\"country\":\"United Kingdom\",\"lat\":51.52,\"lon\":-0.11,\"tz_id\":\"Europe\\/London\",\"localtime_epoch" +
-                "\":1621538910,\"localtime\":\"2021-05-20 16:48\"},\"current\":{\"last_updated_epoch\":1621538400,\"last_updated\"" +
-                ":\"2021-05-20 16:40\",\"temp_c\":13.0,\"temp_f\":55.4,\"is_day\":1,\"condition\":{\"text\":\"Sunny\",\"icon\":\"" +
-                "\\/\\/cdn.weatherapi.com\\/weather\\/64x64\\/day\\/113.png\",\"code\":1000},\"wind_mph\":8.1,\"wind_kph\":13.0,\"" +
-                "wind_degree\":240,\"wind_dir\":\"WSW\",\"pressure_mb\":1016.0,\"pressure_in\":30.5,\"precip_mm\":0.0,\"precip_in\":0.0,\"" +
-                "humidity\":63,\"cloud\":0,\"feelslike_c\":13.0,\"feelslike_f\":55.4,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":5.0,\"gust_mph\"" +
-                ":12.1,\"gust_kph\":19.4}}";
-        Weather sampleWeatherObject = new Weather();
-
-        when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.just(sampleJsonResponse));
-        when(objectMapper.readValue(anyString(), eq(Weather.class))).thenReturn(sampleWeatherObject);
+    void fetchWeather_ShouldReturnWeatherObject_WhenBothApiCallsSucceed() {
+        mockGeocodingResult(51.52, -0.11);
+        WeatherService.ForecastResponse forecastResponse = new WeatherService.ForecastResponse(
+                new WeatherService.CurrentConditions(13.0, 0.4));
+        when(responseSpec.bodyToMono(WeatherService.ForecastResponse.class)).thenReturn(Mono.just(forecastResponse));
 
         Weather result = weatherService.fetchWeather("London").block();
 
         assertNotNull(result);
-        assertEquals(sampleWeatherObject.getLocation(), result.getLocation());
+        assertEquals(13.0, result.getTemperatureC());
+        assertEquals(0.4, result.getPrecipitationMm());
     }
 
     @Test
-    void fetchWeather_ShouldThrowException_WhenApiCallIsUnsuccessful() {
-        when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.error(new Exception()));
+    void fetchWeather_ShouldError_WhenLocationHasNoGeocodingResults() {
+        WeatherService.GeocodingResponse emptyResponse = new WeatherService.GeocodingResponse(List.of());
+        when(responseSpec.bodyToMono(WeatherService.GeocodingResponse.class)).thenReturn(Mono.just(emptyResponse));
 
-        assertThrows(Exception.class, () -> {
-            weatherService.fetchWeather("London").block();
-        });
+        assertThrows(IllegalStateException.class, () -> weatherService.fetchWeather("Nowhereville").block());
     }
 
     @Test
-    void fetchWeather_ShouldHandleHttpException_WhenApiReturns404() {
-        // Mock a 404 HTTP error response
-        when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.error(new WebClientResponseException(404, "Not Found",
-                HttpHeaders.EMPTY, null, null)));
+    void fetchWeather_ShouldPropagateError_WhenGeocodingCallFails() {
+        when(responseSpec.bodyToMono(WeatherService.GeocodingResponse.class))
+                .thenReturn(Mono.error(new WebClientResponseException(500, "Server Error", HttpHeaders.EMPTY, null, null)));
 
-        assertThrows(WebClientResponseException.class, () -> {
-            weatherService.fetchWeather("InvalidLocation").block();
-        });
+        assertThrows(WebClientResponseException.class, () -> weatherService.fetchWeather("London").block());
     }
 
     @Test
-    void fetchWeather_ShouldHandleException_WhenApiCallExceedsTimeout() {
-        when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.error(new TimeoutException("Request timed out")));
+    void fetchWeather_ShouldPropagateError_WhenForecastCallFails() {
+        mockGeocodingResult(51.52, -0.11);
+        when(responseSpec.bodyToMono(WeatherService.ForecastResponse.class))
+                .thenReturn(Mono.error(new TimeoutException("Request timed out")));
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            weatherService.fetchWeather("London").block();
-        });
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> weatherService.fetchWeather("London").block());
         assertTrue(exception.getCause() instanceof TimeoutException);
     }
-
 }

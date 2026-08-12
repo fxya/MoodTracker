@@ -25,6 +25,25 @@
   <div class="chart-wrap">
     <canvas id="moodTrendChart"></canvas>
   </div>
+
+  <div class="empty-state" id="weatherEmptyState" style="display: none;">
+    <p>No weather data recorded yet. Set a location in <a href="/settings">Settings</a> to start tracking weather with your moods.</p>
+  </div>
+
+  <div id="temperatureSection">
+    <h2>Temperature Trend</h2>
+    <div class="chart-wrap">
+      <canvas id="temperatureChart"></canvas>
+    </div>
+  </div>
+
+  <div id="precipitationSection">
+    <h2>Precipitation Trend</h2>
+    <div class="chart-wrap">
+      <canvas id="precipitationChart"></canvas>
+    </div>
+  </div>
+
   <div><a class="btn btn-secondary" href="/moodtracker">Return</a></div>
 </div>
 </body>

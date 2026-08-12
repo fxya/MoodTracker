@@ -216,6 +216,12 @@ tbody tr:hover {
     margin: 0;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
 /* ==========================================================================
    Brand mark & hero (home / login / register)
    ========================================================================== */

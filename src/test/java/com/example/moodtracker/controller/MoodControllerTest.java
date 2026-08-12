@@ -2,8 +2,10 @@ package com.example.moodtracker.controller;
 
 import com.example.moodtracker.model.Mood;
 import com.example.moodtracker.model.User;
+import com.example.moodtracker.model.Weather;
 import com.example.moodtracker.repository.MoodRepository;
 import com.example.moodtracker.repository.UserRepository;
+import com.example.moodtracker.service.WeatherService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,12 +17,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.Model;
+import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,6 +44,9 @@ public class MoodControllerTest {
 
     @Mock
     private Model model; // Added for getMoodsPage, though not the primary focus
+
+    @Mock
+    private WeatherService weatherService;
 
     @InjectMocks
     private MoodController moodController;
@@ -85,6 +92,51 @@ public class MoodControllerTest {
         assertEquals("Happy", savedMood.getMood());
         assertEquals(9, savedMood.getMoodRating());
         assertEquals("Feeling great today, accomplished a lot!", savedMood.getNotes());
+
+        // testUser has no location set, so weather should be skipped entirely -
+        // logging a mood must never depend on the weather lookup succeeding.
+        assertNull(savedMood.getWeather());
+        verifyNoInteractions(weatherService);
+    }
+
+    @Test
+    void testAddMood_fetchesWeatherWhenUserHasLocationSet() {
+        testUser.setLocation("London");
+        Weather london = new Weather();
+        london.setTemperatureC(14.0);
+        london.setPrecipitationMm(0.2);
+
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+        when(weatherService.fetchWeather("London")).thenReturn(Mono.just(london));
+
+        Mood moodFormData = new Mood();
+        moodFormData.setMood("Content");
+        moodFormData.setMoodRating(7);
+
+        ArgumentCaptor<Mood> moodArgumentCaptor = ArgumentCaptor.forClass(Mood.class);
+        moodController.addMood(moodFormData, authentication);
+
+        verify(moodRepository).save(moodArgumentCaptor.capture());
+        assertEquals(london, moodArgumentCaptor.getValue().getWeather());
+    }
+
+    @Test
+    void testAddMood_stillSavesMoodWhenWeatherLookupFails() {
+        testUser.setLocation("Nowhereville");
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+        when(weatherService.fetchWeather("Nowhereville"))
+                .thenReturn(Mono.error(new IllegalStateException("No location found")));
+
+        Mood moodFormData = new Mood();
+        moodFormData.setMood("Anxious");
+        moodFormData.setMoodRating(3);
+
+        ArgumentCaptor<Mood> moodArgumentCaptor = ArgumentCaptor.forClass(Mood.class);
+        String viewName = moodController.addMood(moodFormData, authentication);
+
+        assertEquals("redirect:/moodtracker", viewName);
+        verify(moodRepository).save(moodArgumentCaptor.capture());
+        assertNull(moodArgumentCaptor.getValue().getWeather());
     }
 
     @Test

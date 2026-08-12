@@ -42,5 +42,4 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
-    environment "WEATHER_API_KEY", "test-api-key"
 }
