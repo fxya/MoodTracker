@@ -2,26 +2,29 @@
 <html xmlns:th="https://www.thymeleaf.org">
 <head>
   <title>All Moods</title>
+  <link rel="stylesheet" href="/css/style.css"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-<h1>All Saved Moods</h1>
-<table>
-  <thead>
-  <tr>
-    <th>Date</th>
-    <th>Rating</th>
-    <th>Mood</th>
-  </tr>
-  </thead>
-  <tbody>
-  <!-- Content will be populated by JavaScript -->
-  </tbody>
-</table>
-<br>
-<canvas id="moodTrendChart"></canvas>
-<br>
-<div><a href="/moodtracker">Return</a></div>
+<div class="container">
+  <h1>All Saved Moods</h1>
+  <table>
+    <thead>
+    <tr>
+      <th>Date</th>
+      <th>Rating</th>
+      <th>Mood</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- Content will be populated by JavaScript -->
+    </tbody>
+  </table>
+  <br>
+  <canvas id="moodTrendChart"></canvas>
+  <br>
+  <div><a class="btn btn-secondary" href="/moodtracker">Return</a></div>
+</div>
 </body>
 <script src="/js/moods.js"></script>
 </html>

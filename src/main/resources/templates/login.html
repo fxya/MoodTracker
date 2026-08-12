@@ -14,6 +14,9 @@
             <div th:if="${param.logout}" class="alert alert-success">
                 You have been logged out.
             </div>
+            <div th:if="${registrationSuccess}" class="alert alert-success" th:text="${registrationSuccess}">
+                Registration successful! Please login.
+            </div>
             <div>
                 <label for="username">Username:</label>
                 <input type="text" id="username" name="username" required autofocus/>
@@ -23,7 +26,7 @@
                 <input type="password" id="password" name="password" required/>
             </div>
             <div>
-                <button type="submit">Log in</button>
+                <button type="submit" class="btn btn-primary">Log in</button>
             </div>
         </form>
         <p>No account? <a th:href="@{/register}">Register here</a></p>

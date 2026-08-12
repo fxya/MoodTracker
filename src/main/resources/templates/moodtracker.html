@@ -9,7 +9,7 @@
         <div class="header">
             <span>Hi, <strong sec:authentication="name">User</strong>!</span>
             <form th:action="@{/logout}" method="post" style="display: inline;">
-                <button type="submit">Logout</button>
+                <button type="submit" class="btn btn-secondary">Logout</button>
             </form>
         </div>
 
@@ -29,7 +29,7 @@
                 <label for="notes">Notes:</label>
                 <textarea id="notes" th:field="*{notes}" rows="3"></textarea>
             </div>
-            <button type="submit">Save Mood</button>
+            <button type="submit" class="btn btn-primary">Save Mood</button>
         </form>
 
         <h2>Your Moods</h2>
@@ -43,7 +43,7 @@
                 Rating: <span th:text="${mood.moodRating}">Rating</span>
                 <!-- Display weather info if available and needed -->
                 <!-- <span th:if="${mood.weather}" th:text="' - Weather: ' + ${mood.weather.description}">Weather</span> -->
-                <p th:if="${mood.notes != null && !mood.notes.isEmpty()}" style="margin-top: 5px; margin-bottom: 0;">Notes: <span th:text="${mood.notes}"></span></p>
+                <p class="mood-notes" th:if="${mood.notes != null && !mood.notes.isEmpty()}">Notes: <span th:text="${mood.notes}"></span></p>
             </li>
         </ul>
     </div>

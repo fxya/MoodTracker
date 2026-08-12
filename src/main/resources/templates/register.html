@@ -10,15 +10,18 @@
         <form th:action="@{/register}" method="post" th:object="${user}"> <!-- Assuming a UserController handles /register -->
             <div>
                 <label for="username">Username:</label>
-                <input type="text" id="username" name="username" th:field="*{username}" required autofocus/>
-                <!-- Display validation errors if any -->
+                <input type="text" id="username" name="username" th:field="*{username}"
+                       th:classappend="${#fields.hasErrors('username')} ? 'is-invalid'" required autofocus/>
+                <div class="field-error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">Username Error</div>
             </div>
             <div>
                 <label for="password">Password:</label>
-                <input type="password" id="password" name="password" th:field="*{password}" required/>
+                <input type="password" id="password" name="password" th:field="*{password}"
+                       th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'" required/>
+                <div class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Password Error</div>
             </div>
             <div>
-                <button type="submit">Register</button>
+                <button type="submit" class="btn btn-primary">Register</button>
             </div>
         </form>
         <p>Already have an account? <a th:href="@{/login}">Login here</a></p>
