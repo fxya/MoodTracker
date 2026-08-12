@@ -2,10 +2,12 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Register</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
     <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
-<body>
+<body class="centered-page">
     <div class="container">
+        <div class="brand-mark" aria-hidden="true">🙂</div>
         <h1>Register New User</h1>
         <form th:action="@{/register}" method="post" th:object="${user}"> <!-- Assuming a UserController handles /register -->
             <div>
@@ -24,7 +26,7 @@
                 <button type="submit" class="btn btn-primary">Register</button>
             </div>
         </form>
-        <p>Already have an account? <a th:href="@{/login}">Login here</a></p>
+        <p class="auth-footer">Already have an account? <a th:href="@{/login}">Login here</a></p>
     </div>
 </body>
 </html>

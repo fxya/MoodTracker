@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity6">
 <head>
     <title>Mood Tracker</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
     <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
 <body>
@@ -33,17 +34,21 @@
         </form>
 
         <h2>Your Moods</h2>
-        <div th:if="${#lists.isEmpty(moods)}">
-            <p>You haven't recorded any moods yet.</p>
+        <div class="empty-state" th:if="${#lists.isEmpty(moods)}">
+            <p>You haven't recorded any moods yet. Add your first one above!</p>
         </div>
         <ul th:unless="${#lists.isEmpty(moods)}">
-            <li th:each="mood : ${moods}">
-                <span th:text="${#temporals.format(mood.date, 'dd-MMM-yyyy HH:mm')}">Date</span> -
-                Mood: <span th:text="${mood.mood}">Mood Text</span> -
-                Rating: <span th:text="${mood.moodRating}">Rating</span>
+            <li class="mood-card" th:each="mood : ${moods}">
+                <div class="mood-card-header">
+                    <span class="mood-date" th:text="${#temporals.format(mood.date, 'dd-MMM-yyyy HH:mm')}">Date</span>
+                    <span class="rating-badge"
+                          th:classappend="${mood.moodRating <= 3} ? 'rating-low' : (${mood.moodRating <= 6} ? 'rating-mid' : 'rating-high')"
+                          th:text="${mood.moodRating} + '/10'">Rating</span>
+                </div>
+                <p class="mood-text" th:text="${mood.mood}">Mood Text</p>
                 <!-- Display weather info if available and needed -->
-                <!-- <span th:if="${mood.weather}" th:text="' - Weather: ' + ${mood.weather.description}">Weather</span> -->
-                <p class="mood-notes" th:if="${mood.notes != null && !mood.notes.isEmpty()}">Notes: <span th:text="${mood.notes}"></span></p>
+                <!-- <span th:if="${mood.weather}" th:text="'Weather: ' + ${mood.weather.description}">Weather</span> -->
+                <p class="mood-notes" th:if="${mood.notes != null && !mood.notes.isEmpty()}" th:text="${mood.notes}">Notes</p>
             </li>
         </ul>
     </div>

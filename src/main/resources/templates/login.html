@@ -2,10 +2,12 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Login</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
     <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
-<body>
+<body class="centered-page">
     <div class="container">
+        <div class="brand-mark" aria-hidden="true">🙂</div>
         <h1>Login</h1>
         <form th:action="@{/login}" method="post">
             <div th:if="${param.error}" class="alert alert-danger">
@@ -29,7 +31,7 @@
                 <button type="submit" class="btn btn-primary">Log in</button>
             </div>
         </form>
-        <p>No account? <a th:href="@{/register}">Register here</a></p>
+        <p class="auth-footer">No account? <a th:href="@{/register}">Register here</a></p>
     </div>
 </body>
 </html>

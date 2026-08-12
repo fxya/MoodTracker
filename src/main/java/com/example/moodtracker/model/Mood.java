@@ -1,5 +1,6 @@
 package com.example.moodtracker.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,6 +26,7 @@ public class Mood {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id") // This specifies the foreign key column in the 'mood' table
+    @JsonIgnore // Avoid serializing the owning User (and its back-reference cycle) via /api/moods
     private User user;
 
     public Mood(String mood, Instant date, Integer moodRating, User user, Weather weather, String notes) {
