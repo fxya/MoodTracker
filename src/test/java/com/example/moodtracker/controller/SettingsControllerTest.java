@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.ui.Model;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Optional;
@@ -49,6 +50,63 @@ public class SettingsControllerTest {
         testUser.setId(1L);
         testUser.setUsername(testUsername);
         testUser.setPassword("encoded-old-password");
+    }
+
+    @Test
+    void testShowSettings_exposesCurrentLocationAndTimeZone() {
+        testUser.setLocation("London");
+        testUser.setTimeZone("Europe/London");
+        when(authentication.getName()).thenReturn(testUsername);
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+        Model model = mock(Model.class);
+        String viewName = settingsController.showSettings(model, authentication);
+
+        assertEquals("settings", viewName);
+        verify(model).addAttribute("location", "London");
+        verify(model).addAttribute("timeZone", "Europe/London");
+        verify(model).addAttribute(eq("availableTimeZones"), any());
+        verify(model).addAttribute("username", testUsername);
+    }
+
+    @Test
+    void testUpdateSettings_savesLocationAndTimeZone() {
+        when(authentication.getName()).thenReturn(testUsername);
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+        String viewName = settingsController.updateSettings("London", "Europe/London", authentication, redirectAttributes);
+
+        assertEquals("redirect:/settings", viewName);
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
+        assertEquals("London", userCaptor.getValue().getLocation());
+        assertEquals("Europe/London", userCaptor.getValue().getTimeZone());
+        verify(redirectAttributes).addFlashAttribute("settingsSaved", true);
+    }
+
+    @Test
+    void testUpdateSettings_blankTimeZoneClearsIt() {
+        testUser.setTimeZone("Europe/London");
+        when(authentication.getName()).thenReturn(testUsername);
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+        settingsController.updateSettings("London", "  ", authentication, redirectAttributes);
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
+        assertNull(userCaptor.getValue().getTimeZone());
+    }
+
+    @Test
+    void testUpdateSettings_invalidTimeZone_doesNotSave() {
+        when(authentication.getName()).thenReturn(testUsername);
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+        String viewName = settingsController.updateSettings("London", "Not/AZone", authentication, redirectAttributes);
+
+        assertEquals("redirect:/settings", viewName);
+        verify(userRepository, never()).save(any());
+        verify(redirectAttributes).addFlashAttribute(eq("settingsError"), anyString());
     }
 
     @Test

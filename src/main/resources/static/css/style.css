@@ -285,6 +285,7 @@ label {
 input[type="text"],
 input[type="password"],
 input[type="number"],
+select,
 textarea {
     width: 100%;
     padding: var(--space-3);
@@ -303,6 +304,7 @@ textarea {
 }
 
 input:focus,
+select:focus,
 textarea:focus {
     outline: none;
     border-color: var(--color-primary);

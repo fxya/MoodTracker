@@ -35,6 +35,11 @@ public class User {
     // Free-text location (e.g. "London") used to look up weather for each mood.
     private String location;
 
+    // IANA zone id (e.g. "America/New_York"), used to render mood dates/times in the
+    // user's own time zone instead of the server's. Null means "use the server's
+    // default zone", which is what every user got before this field existed.
+    private String timeZone;
+
     // Excluded from equals/hashCode/toString: Mood has a back-reference to User, and
     // Lombok's @Data on both sides would otherwise recurse through user <-> moods,
     // which corrupts Hibernate's lazy-collection loading (ConcurrentModificationException

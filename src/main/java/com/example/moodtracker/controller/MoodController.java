@@ -27,7 +27,10 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import reactor.core.publisher.Mono;
 
+import java.time.DateTimeException;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -37,6 +40,7 @@ public class MoodController {
 
     private static final Logger log = LoggerFactory.getLogger(MoodController.class);
     private static final int PAGE_SIZE = 5;
+    private static final DateTimeFormatter MOOD_DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm");
 
     @Autowired
     private MoodRepository moodRepository;
@@ -59,6 +63,9 @@ public class MoodController {
         String normalizedQuery = (q == null || q.isBlank()) ? null : q.trim();
         Pageable pageable = PageRequest.of(Math.max(page, 0), PAGE_SIZE);
         Page<Mood> moodPage = moodRepository.search(user, normalizedQuery, minRating, maxRating, pageable);
+
+        ZoneId zone = resolveZone(user);
+        moodPage.getContent().forEach(mood -> mood.setFormattedDate(MOOD_DATE_FORMAT.withZone(zone).format(mood.getDate())));
 
         model.addAttribute("moods", moodPage.getContent());
         model.addAttribute("moodPage", moodPage);
@@ -134,6 +141,24 @@ public class MoodController {
         String username = authentication.getName();
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
+    }
+
+    // Falls back to the server's zone when the user hasn't set one - the only
+    // behavior available before User.timeZone existed, so nothing regresses for
+    // users who haven't opted in. SettingsController already validates the stored
+    // value, but a defensive fallback here means a bad value can never break the
+    // mood list rather than just failing more gracefully at save time.
+    private ZoneId resolveZone(User user) {
+        String timeZone = user.getTimeZone();
+        if (timeZone == null || timeZone.isBlank()) {
+            return ZoneId.systemDefault();
+        }
+        try {
+            return ZoneId.of(timeZone);
+        } catch (DateTimeException e) {
+            log.warn("Invalid time zone \"{}\" for user \"{}\"; falling back to server default", timeZone, user.getUsername());
+            return ZoneId.systemDefault();
+        }
     }
 
     // Compares this week's average mood rating to the prior week's, fetching only the

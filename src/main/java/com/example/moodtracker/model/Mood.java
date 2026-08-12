@@ -26,6 +26,14 @@ public class Mood {
     @OneToOne(cascade = CascadeType.ALL)
     private Weather weather;
 
+    // View-only: set by MoodController when rendering moodtracker.html, formatted in
+    // the owning user's time zone rather than the server's. Not persisted, and left
+    // out of the /api/moods JSON payload (the charts on /moods format dates
+    // client-side in the browser's own zone, so they don't need this).
+    @Transient
+    @JsonIgnore
+    private String formattedDate;
+
     // Excluded from equals/hashCode/toString: see the matching note on User.moods -
     // both sides of this bidirectional relationship must break the cycle.
     @ManyToOne(fetch = FetchType.LAZY)

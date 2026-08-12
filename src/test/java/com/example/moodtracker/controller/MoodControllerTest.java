@@ -179,6 +179,60 @@ public class MoodControllerTest {
     }
 
     @Test
+    void testGetMoodsPage_formatsDatesInUsersTimeZone() {
+        testUser.setTimeZone("America/New_York");
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+        Mood mood = moodWithRating(8, Instant.parse("2026-01-15T05:30:00Z")); // 00:30 EST
+        when(moodRepository.search(eq(testUser), isNull(), isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(mood)));
+        when(moodRepository.findByUserAndDateAfterOrderByDateDesc(eq(testUser), any(Instant.class)))
+                .thenReturn(Collections.emptyList());
+
+        moodController.getMoodsPage(null, null, null, 0, model, authentication);
+
+        assertEquals("15-Jan-2026 00:30", mood.getFormattedDate());
+    }
+
+    @Test
+    void testGetMoodsPage_fallsBackToServerZoneWhenUserTimeZoneUnset() {
+        testUser.setTimeZone(null);
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+        Instant date = Instant.parse("2026-01-15T05:30:00Z");
+        Mood mood = moodWithRating(8, date);
+        when(moodRepository.search(eq(testUser), isNull(), isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(mood)));
+        when(moodRepository.findByUserAndDateAfterOrderByDateDesc(eq(testUser), any(Instant.class)))
+                .thenReturn(Collections.emptyList());
+
+        moodController.getMoodsPage(null, null, null, 0, model, authentication);
+
+        String expected = java.time.format.DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm")
+                .withZone(java.time.ZoneId.systemDefault()).format(date);
+        assertEquals(expected, mood.getFormattedDate());
+    }
+
+    @Test
+    void testGetMoodsPage_fallsBackToServerZoneWhenUserTimeZoneInvalid() {
+        testUser.setTimeZone("Not/AZone");
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+        Instant date = Instant.parse("2026-01-15T05:30:00Z");
+        Mood mood = moodWithRating(8, date);
+        when(moodRepository.search(eq(testUser), isNull(), isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(mood)));
+        when(moodRepository.findByUserAndDateAfterOrderByDateDesc(eq(testUser), any(Instant.class)))
+                .thenReturn(Collections.emptyList());
+
+        moodController.getMoodsPage(null, null, null, 0, model, authentication);
+
+        String expected = java.time.format.DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm")
+                .withZone(java.time.ZoneId.systemDefault()).format(date);
+        assertEquals(expected, mood.getFormattedDate());
+    }
+
+    @Test
     void testGetMoodsPage_passesSearchFilterAndPageToRepository() {
         when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
         when(moodRepository.search(eq(testUser), eq("happy"), eq(4), eq(9), any(Pageable.class)))

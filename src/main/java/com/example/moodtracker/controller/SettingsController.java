@@ -15,6 +15,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.DateTimeException;
+import java.time.ZoneId;
+import java.util.List;
+
 @Controller
 @RequestMapping("/settings")
 public class SettingsController {
@@ -29,20 +33,49 @@ public class SettingsController {
     public String showSettings(Model model, Authentication authentication) {
         User user = currentUser(authentication);
         model.addAttribute("location", user.getLocation());
+        model.addAttribute("timeZone", user.getTimeZone());
+        model.addAttribute("availableTimeZones", sortedTimeZoneIds());
         model.addAttribute("username", user.getUsername());
         return "settings";
     }
 
     @PostMapping
     public String updateSettings(@RequestParam(value = "location", required = false) String location,
+                                  @RequestParam(value = "timeZone", required = false) String timeZone,
                                   Authentication authentication,
                                   RedirectAttributes redirectAttributes) {
         User user = currentUser(authentication);
         user.setLocation(location == null || location.isBlank() ? null : location.trim());
+
+        // A blank selection means "use the server's default zone" (the previous,
+        // only behavior) - anything else must be a real IANA zone id, since it
+        // drives date/time formatting elsewhere and a garbage value would blow up
+        // at render time instead of at save time.
+        if (timeZone == null || timeZone.isBlank()) {
+            user.setTimeZone(null);
+        } else if (isValidTimeZone(timeZone)) {
+            user.setTimeZone(timeZone);
+        } else {
+            redirectAttributes.addFlashAttribute("settingsError", "Unrecognized time zone.");
+            return "redirect:/settings";
+        }
         userRepository.save(user);
 
         redirectAttributes.addFlashAttribute("settingsSaved", true);
         return "redirect:/settings";
+    }
+
+    private boolean isValidTimeZone(String timeZone) {
+        try {
+            ZoneId.of(timeZone);
+            return true;
+        } catch (DateTimeException e) {
+            return false;
+        }
+    }
+
+    private List<String> sortedTimeZoneIds() {
+        return ZoneId.getAvailableZoneIds().stream().sorted().toList();
     }
 
     @PostMapping("/password")
