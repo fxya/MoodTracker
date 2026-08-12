@@ -1,7 +1,6 @@
 package com.example.moodtracker.service;
 
 import com.example.moodtracker.model.Weather;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -12,8 +11,8 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -72,11 +71,7 @@ class WeatherServiceTest {
         Weather sampleWeatherObject = new Weather();
 
         when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.just(sampleJsonResponse));
-        try {
-            when(objectMapper.readValue(anyString(), eq(Weather.class))).thenReturn(sampleWeatherObject);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        when(objectMapper.readValue(anyString(), eq(Weather.class))).thenReturn(sampleWeatherObject);
 
         Weather result = weatherService.fetchWeather("London").block();
 

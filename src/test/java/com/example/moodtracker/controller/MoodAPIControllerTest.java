@@ -4,21 +4,21 @@ import com.example.moodtracker.model.Mood;
 import com.example.moodtracker.model.Weather; // Assuming Weather might be needed for Mood object
 import com.example.moodtracker.repository.MoodRepository;
 import com.example.moodtracker.service.WeatherService; // WeatherService is a dependency
-import com.fasterxml.jackson.databind.ObjectMapper; // For JSON conversion
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.servlet.view.RedirectView;
 import reactor.core.publisher.Mono; // For WeatherService mock
 import reactor.test.StepVerifier;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -48,11 +48,11 @@ public class MoodAPIControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    // MockBean for existing MockMvc tests
-    @MockBean
+    // MockitoBean for existing MockMvc tests
+    @MockitoBean
     private MoodRepository mockBeanMoodRepository;
 
-    @MockBean
+    @MockitoBean
     private WeatherService mockBeanWeatherService;
 
     // Mocks for the new unit test

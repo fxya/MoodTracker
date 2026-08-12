@@ -1,5 +1,5 @@
-# Use an official OpenJDK runtime as a parent image
-FROM openjdk:17-jdk-slim
+# Use an official Eclipse Temurin JRE runtime as a parent image
+FROM eclipse-temurin:21-jre-jammy
 
 # Arguments for user and group
 ARG UID=10001
