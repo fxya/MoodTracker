@@ -1,17 +1,24 @@
 package com.example.moodtracker.controller;
 
 import com.example.moodtracker.model.Mood;
+import com.example.moodtracker.model.User;
 import com.example.moodtracker.model.Weather; // Assuming Weather might be needed for Mood object
 import com.example.moodtracker.repository.MoodRepository;
+import com.example.moodtracker.repository.UserRepository;
 import com.example.moodtracker.service.WeatherService; // WeatherService is a dependency
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,6 +33,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -55,6 +63,9 @@ public class MoodAPIControllerTest {
     @MockitoBean
     private WeatherService mockBeanWeatherService;
 
+    @MockitoBean
+    private UserRepository mockBeanUserRepository;
+
     // Mocks for the new unit test
     @Mock
     private MoodRepository moodRepository; // Renamed from mockBeanMoodRepository to avoid clash if @MockBean also creates a field with this name
@@ -62,11 +73,15 @@ public class MoodAPIControllerTest {
     @Mock
     private WeatherService weatherService; // Renamed from mockBeanWeatherService
 
+    @Mock
+    private UserRepository userRepository;
+
     @Autowired
     private ObjectMapper objectMapper; // For converting objects to JSON
 
     private Mood mood1;
     private Mood mood2;
+    private User testUser;
 
     @BeforeEach
     void setUp() {
@@ -75,6 +90,11 @@ public class MoodAPIControllerTest {
 
         // Mock WeatherService response for MockMvc tests using the @MockBean instance
         when(mockBeanWeatherService.fetchWeather(anyString())).thenReturn(Mono.just(mockMvcWeather));
+
+        testUser = new User();
+        testUser.setId(1L);
+        testUser.setUsername("testuser");
+        when(mockBeanUserRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
         mood1 = new Mood();
         mood1.setId(1L);
@@ -89,6 +109,11 @@ public class MoodAPIControllerTest {
         mood2.setDate(Instant.now().minusSeconds(3600));
         mood2.setMoodRating(3);
         mood2.setWeather(mockMvcWeather);
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -123,16 +148,17 @@ public class MoodAPIControllerTest {
                 .andExpect(status().is3xxRedirection()) // Expecting a redirect
                 .andExpect(redirectedUrl("/moods"));
 
-        // We could add Mockito.verify here if we wanted to ensure save was called,
-        // and capture the argument to check if moodRating was correctly passed.
-        // For now, the controller logic is simple enough that if it redirects, it likely worked.
+        // The mood should be attributed to the authenticated user - this endpoint used
+        // to save moods with no user at all, so they'd never show up in anyone's list.
+        ArgumentCaptor<Mood> moodCaptor = ArgumentCaptor.forClass(Mood.class);
+        verify(mockBeanMoodRepository).save(moodCaptor.capture());
+        assertEquals(testUser, moodCaptor.getValue().getUser());
     }
 
     @Test
     @WithMockUser(username = "testuser")
-    void getAllMoods_shouldReturnMoodsWithRatings() throws Exception {
-        // Ensure this uses the @MockBean for findAll
-        when(mockBeanMoodRepository.findAll()).thenReturn(Arrays.asList(mood1, mood2));
+    void getAllMoods_shouldReturnOnlyTheAuthenticatedUsersMoods() throws Exception {
+        when(mockBeanMoodRepository.findByUserOrderByDateDesc(testUser)).thenReturn(Arrays.asList(mood1, mood2));
 
         mockMvc.perform(get("/api/moods"))
                 .andExpect(status().isOk())
@@ -141,6 +167,10 @@ public class MoodAPIControllerTest {
                 .andExpect(jsonPath("$[0].moodRating").value(7))
                 .andExpect(jsonPath("$[1].mood").value("Sad"))
                 .andExpect(jsonPath("$[1].moodRating").value(3));
+
+        // findAll() would leak every user's moods to whoever is logged in - make sure
+        // the scoped lookup is what actually gets called.
+        verify(mockBeanMoodRepository, never()).findAll();
     }
 
     @Test
@@ -152,14 +182,19 @@ public class MoodAPIControllerTest {
         String testLocation = "Paris";
         Weather mockWeather = new Weather(); // Example weather
 
+        Authentication authentication = new UsernamePasswordAuthenticationToken("testuser", "password");
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
         // Mocking WeatherService to return specific weather for the testLocation
         when(weatherService.fetchWeather(testLocation)).thenReturn(Mono.just(mockWeather));
 
         // Mocking MoodRepository save operation
         when(moodRepository.save(any(Mood.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+
         // When
-        MoodAPIController controller = new MoodAPIController(moodRepository, weatherService);
+        MoodAPIController controller = new MoodAPIController(moodRepository, userRepository, weatherService);
         Mono<RedirectView> result = controller.addMood(moodText, moodRating, dateTimeString, testLocation);
 
         // Then
@@ -177,7 +212,11 @@ public class MoodAPIControllerTest {
         // Verify that fetchWeather was called on weatherService with the correct location
         verify(weatherService, times(1)).fetchWeather(testLocation);
 
-        // Verify that save was called on moodRepository
-        verify(moodRepository, times(1)).save(any(Mood.class));
+        // Verify that save was called on moodRepository, with the mood attributed to the
+        // authenticated user - moods created via this endpoint used to be saved with no
+        // user at all, which meant they'd never show up in anyone's mood list.
+        ArgumentCaptor<Mood> moodCaptor = ArgumentCaptor.forClass(Mood.class);
+        verify(moodRepository, times(1)).save(moodCaptor.capture());
+        assertEquals(testUser, moodCaptor.getValue().getUser());
     }
 }
