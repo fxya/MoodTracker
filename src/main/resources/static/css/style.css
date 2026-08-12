@@ -325,6 +325,24 @@ textarea.is-invalid:focus {
     color: var(--color-danger);
 }
 
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+}
+
+.filter-form > div {
+    flex: 1 1 160px;
+    margin-bottom: 0;
+}
+
+.filter-form-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
 /* ==========================================================================
    Buttons
    ========================================================================== */
@@ -394,6 +412,19 @@ textarea.is-invalid:focus {
     border-color: var(--color-danger-hover);
 }
 
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    margin-top: var(--space-5);
+}
+
+.pagination-status {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
 /* ==========================================================================
    Alerts
    ========================================================================== */
@@ -416,6 +447,60 @@ textarea.is-invalid:focus {
     background-color: var(--color-success-bg);
     color: var(--color-success);
     border-color: var(--color-success-border);
+}
+
+/* ==========================================================================
+   Weekly summary stat card
+   ========================================================================== */
+
+.stat-card {
+    background-color: var(--color-surface-alt);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    margin-bottom: var(--space-5);
+}
+
+.stat-card-empty {
+    text-align: center;
+    color: var(--color-text-muted);
+}
+
+.stat-card-empty p {
+    margin: 0;
+}
+
+.stat-value {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.stat-label {
+    margin-top: var(--space-1);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.stat-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.trend-up {
+    color: var(--color-success);
+}
+
+.trend-down {
+    color: var(--color-danger);
+}
+
+.trend-flat {
+    color: var(--color-text-muted);
 }
 
 /* ==========================================================================
@@ -481,6 +566,12 @@ ul {
     margin: 0;
     font-size: var(--font-size-lg);
     font-weight: 600;
+}
+
+.mood-weather {
+    margin: var(--space-1) 0 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
 }
 
 .mood-notes {
