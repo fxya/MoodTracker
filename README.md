@@ -6,16 +6,18 @@ Secured with Spring Security.
 
 ## Features
 
-- Record daily moods with a rating.
-- View mood history.
-- Correlate moods with weather data from an external API.
+- Register and log in as a user; moods are scoped to your own account.
+- Record daily moods with a 1-10 rating and free-text notes.
+- View your mood history, including notes.
+- Correlate moods with weather data from an external API (via the
+  separate `/api/moods` + `/moods` trend-chart endpoints, requires a
+  WeatherAPI key).
 - Secure application with Spring Security.
 
 ## Technologies Used
 
-- Java
-- Spring Boot
-- Spring Security
+- Java 21
+- Spring Boot 4.1 (Spring Framework 7, Spring Security 7, Jackson 3)
 - Spring Data JPA
 - Thymeleaf
 - PostgreSQL
@@ -43,7 +45,9 @@ Secured with Spring Security.
         your_actual_api_key
         ```
         This method is not used for Docker deployments.
-3.  **Ensure Java 17 and Gradle are installed.**
+3.  **Ensure Java 21 is installed.** The included `./gradlew` wrapper downloads
+    a matching Gradle distribution automatically, so a separate Gradle install
+    isn't required.
 4.  **Set up PostgreSQL:** Ensure you have PostgreSQL running. Configure the database connection in `src/main/resources/application.properties` if your setup differs from the default:
     ```properties
     spring.datasource.url=jdbc:postgresql://localhost:5432/moodtracker
@@ -56,7 +60,21 @@ Secured with Spring Security.
     ```bash
     ./gradlew bootRun
     ```
-6.  **Access the application:** Open your web browser and go to `http://localhost:8080`.
+6.  **Access the application:** Open your web browser and go to `http://localhost:8080`,
+    register an account, then log in.
+
+## Running Tests
+
+```bash
+./gradlew test
+```
+
+The test suite (controllers, `WeatherService`, and application context) runs
+against a real local PostgreSQL instance — make sure one is running and
+configured as described above before running tests. No real `WEATHER_API_KEY`
+is required; the test task sets a dummy value so `WeatherServiceTest` (which
+mocks the actual HTTP call) doesn't depend on a real key or a local `.apikey`
+file.
 
 ## Docker
 

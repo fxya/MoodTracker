@@ -31,23 +31,45 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             const dataPoints = validMoods.map(mood => mood.moodRating);
 
+            // Single-series trend line: one hue from the app palette (validated for
+            // contrast against the white chart surface), thin 2px line, small
+            // markers, light fill. No legend - the "Mood Trend" heading names it.
             const ctx = document.getElementById('moodTrendChart').getContext('2d');
             new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Mood Rating Trend',
+                        label: 'Mood Rating',
                         data: dataPoints,
-                        borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1
+                        borderColor: '#5b52d6',
+                        backgroundColor: 'rgba(91, 82, 214, 0.12)',
+                        pointBackgroundColor: '#5b52d6',
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        borderWidth: 2,
+                        tension: 0.25,
+                        fill: true
                     }]
                 },
                 options: {
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            max: 10
+                            max: 10,
+                            grid: {
+                                color: '#e3ded6'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
                         }
                     }
                 }

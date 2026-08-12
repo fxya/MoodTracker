@@ -1,5 +1,6 @@
 package com.example.moodtracker.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,7 @@ public class User {
     private String username;
 
     @Column(nullable = false)
+    @JsonIgnore // Never serialize the password hash if a User is ever exposed via JSON
     private String password;
 
     // For now, we'll keep roles simple. A Set<String> could be used for more complex role management.

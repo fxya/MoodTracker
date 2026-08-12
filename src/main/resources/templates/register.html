@@ -2,26 +2,31 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Register</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
     <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
-<body>
+<body class="centered-page">
     <div class="container">
+        <div class="brand-mark" aria-hidden="true">🙂</div>
         <h1>Register New User</h1>
         <form th:action="@{/register}" method="post" th:object="${user}"> <!-- Assuming a UserController handles /register -->
             <div>
                 <label for="username">Username:</label>
-                <input type="text" id="username" name="username" th:field="*{username}" required autofocus/>
-                <!-- Display validation errors if any -->
+                <input type="text" id="username" name="username" th:field="*{username}"
+                       th:classappend="${#fields.hasErrors('username')} ? 'is-invalid'" required autofocus/>
+                <div class="field-error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">Username Error</div>
             </div>
             <div>
                 <label for="password">Password:</label>
-                <input type="password" id="password" name="password" th:field="*{password}" required/>
+                <input type="password" id="password" name="password" th:field="*{password}"
+                       th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'" required/>
+                <div class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Password Error</div>
             </div>
             <div>
-                <button type="submit">Register</button>
+                <button type="submit" class="btn btn-primary">Register</button>
             </div>
         </form>
-        <p>Already have an account? <a th:href="@{/login}">Login here</a></p>
+        <p class="auth-footer">Already have an account? <a th:href="@{/login}">Login here</a></p>
     </div>
 </body>
 </html>

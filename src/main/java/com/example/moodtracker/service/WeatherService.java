@@ -1,8 +1,8 @@
 package com.example.moodtracker.service;
 
 import com.example.moodtracker.model.Weather;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -32,14 +32,7 @@ public class WeatherService {
                                 .build())
                         .retrieve()
                         .bodyToMono(String.class)
-                        .flatMap(jsonString -> {
-                            try {
-                                Weather weather = objectMapper.readValue(jsonString, Weather.class);
-                                return Mono.just(weather);
-                            } catch (IOException e) {
-                                return Mono.error(e);
-                            }
-                        })
+                        .map(jsonString -> objectMapper.readValue(jsonString, Weather.class))
                 );
     }
 

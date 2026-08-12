@@ -1,89 +1,520 @@
-body {
-    font-family: sans-serif;
-    margin: 20px;
-    background-color: #f4f4f4;
-    color: #333;
+/* ==========================================================================
+   Design tokens
+   ========================================================================== */
+
+:root {
+    /* Color palette - calm indigo primary, warm neutral surface */
+    --color-bg: #f6f4f1;
+    --color-surface: #ffffff;
+    --color-surface-alt: #f1eee8;
+    --color-border: #e3ded6;
+
+    --color-primary: #5b52d6;
+    --color-primary-hover: #4741b3;
+    --color-primary-contrast: #ffffff;
+
+    --color-text: #262433;
+    --color-text-muted: #6b6779;
+
+    --color-danger: #a3271f;
+    --color-danger-bg: #fbeae8;
+    --color-danger-border: #f1c6c1;
+
+    --color-warning: #8a5a00;
+    --color-warning-bg: #faf1de;
+    --color-warning-border: #e9d3a0;
+
+    --color-success: #1e6b45;
+    --color-success-bg: #e7f4ec;
+    --color-success-border: #b9e0c9;
+
+    --color-focus-ring: rgba(91, 82, 214, 0.35);
+
+    /* Mood rating tiers - low/mid/high, reused for badges */
+    --color-rating-low: var(--color-danger);
+    --color-rating-mid: var(--color-warning);
+    --color-rating-high: var(--color-success);
+
+    /* Spacing scale */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+
+    /* Radius & shadow */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-pill: 999px;
+    --shadow-sm: 0 1px 2px rgba(20, 18, 33, 0.06);
+    --shadow-md: 0 8px 24px rgba(20, 18, 33, 0.08);
+
+    /* Typography */
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.5rem;
+    --font-size-2xl: 1.875rem;
 }
 
+/* Dark mode: same structure, re-stepped for a dark surface. Not an automatic
+   invert - anchors chosen so text/badge/button contrast still holds. */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-bg: #1c1a24;
+        --color-surface: #262433;
+        --color-surface-alt: #2f2c3d;
+        --color-border: #3d3950;
+
+        --color-primary: #8b82f0;
+        --color-primary-hover: #a29afa;
+        --color-primary-contrast: #1c1a24;
+
+        --color-text: #ece9f5;
+        --color-text-muted: #a9a4bd;
+
+        --color-danger: #f0968d;
+        --color-danger-bg: #3a2320;
+        --color-danger-border: #5c332c;
+
+        --color-warning: #e0b25c;
+        --color-warning-bg: #3a2f16;
+        --color-warning-border: #5c4a22;
+
+        --color-success: #7ed2a6;
+        --color-success-bg: #1c3327;
+        --color-success-border: #2c4e3b;
+
+        --color-focus-ring: rgba(139, 130, 240, 0.4);
+
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Rating badges keep white-on-solid in light mode; in dark mode the
+       tier colors above are already light, so badge text flips to dark ink. */
+    .rating-badge {
+        color: #1c1a24;
+    }
+}
+
+/* ==========================================================================
+   Reset & base
+   ========================================================================== */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: var(--space-6) var(--space-4);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    line-height: 1.5;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+}
+
+body.centered-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+h1, h2, h3 {
+    color: var(--color-text);
+    line-height: 1.25;
+}
+
+h1 {
+    font-size: var(--font-size-2xl);
+    margin: 0 0 var(--space-4);
+}
+
+h2 {
+    font-size: var(--font-size-lg);
+    margin: var(--space-6) 0 var(--space-3);
+}
+
+p {
+    margin: 0 0 var(--space-3);
+}
+
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+a:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+th, td {
+    text-align: left;
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+}
+
+th {
+    color: var(--color-text-muted);
+    font-weight: 600;
+}
+
+tbody tr:hover {
+    background-color: var(--color-surface-alt);
+}
+
+/* ==========================================================================
+   Layout
+   ========================================================================== */
+
 .container {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    background-color: var(--color-surface);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-border);
     max-width: 700px;
-    margin: auto;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.container-wide {
+    max-width: 900px;
 }
 
 .header {
     display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
+    margin-bottom: var(--space-5);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
 }
 
-h1, h2 {
-    color: #0056b3;
+.header .btn {
+    margin: 0;
+}
+
+/* ==========================================================================
+   Brand mark & hero (home / login / register)
+   ========================================================================== */
+
+.brand-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto var(--space-4);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface-alt);
+    font-size: 1.75rem;
+}
+
+.hero {
+    text-align: center;
+}
+
+.hero h1 {
+    margin-bottom: var(--space-2);
+}
+
+.hero-tagline {
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-5);
+}
+
+.hero-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.auth-footer {
+    margin-top: var(--space-4);
+    text-align: center;
+    color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   Forms
+   ========================================================================== */
+
+form > div {
+    margin-bottom: var(--space-4);
 }
 
 label {
     display: block;
-    margin-top: 10px;
-    margin-bottom: 5px;
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
 }
 
 input[type="text"],
 input[type="password"],
-input[type="number"] {
-    width: calc(100% - 22px);
-    padding: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+input[type="number"],
+textarea {
+    width: 100%;
+    padding: var(--space-3);
+    font-family: inherit;
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-button {
-    background-color: #0056b3;
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
+textarea {
+    resize: vertical;
+    font-family: var(--font-sans);
+}
+
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+input.is-invalid,
+textarea.is-invalid {
+    border-color: var(--color-danger);
+}
+
+input.is-invalid:focus,
+textarea.is-invalid:focus {
+    box-shadow: 0 0 0 3px rgba(163, 39, 31, 0.2);
+}
+
+.field-error {
+    margin-top: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-danger);
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+.btn {
+    display: inline-block;
+    padding: var(--space-3) var(--space-5);
+    font-family: inherit;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    font-size: 16px;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
 
-button:hover {
-    background-color: #004494;
+.btn:hover {
+    text-decoration: none;
 }
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-primary-contrast);
+}
+
+.btn-primary:hover {
+    background-color: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+}
+
+.btn-secondary {
+    background-color: transparent;
+    border-color: var(--color-border);
+    color: var(--color-text-muted);
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-surface-alt);
+    color: var(--color-text);
+}
+
+/* ==========================================================================
+   Alerts
+   ========================================================================== */
 
 .alert {
-    padding: 10px;
-    margin-bottom: 15px;
-    border-radius: 4px;
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-4);
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    font-size: var(--font-size-sm);
 }
 
 .alert-danger {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger);
+    border-color: var(--color-danger-border);
 }
 
 .alert-success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+    border-color: var(--color-success-border);
 }
+
+/* ==========================================================================
+   Mood cards
+   ========================================================================== */
 
 ul {
     list-style-type: none;
     padding: 0;
+    margin: 0;
 }
 
-li {
-    background-color: #e9ecef;
-    border: 1px solid #ced4da;
-    padding: 10px;
-    margin-bottom: 5px;
-    border-radius: 4px;
+.mood-card {
+    background-color: var(--color-surface-alt);
+    border: 1px solid var(--color-border);
+    padding: var(--space-4);
+    margin-bottom: var(--space-3);
+    border-radius: var(--radius-md);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.mood-card:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+}
+
+.mood-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-2);
+}
+
+.mood-date {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.rating-badge {
+    flex-shrink: 0;
+    display: inline-block;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-primary-contrast);
+}
+
+.rating-low {
+    background-color: var(--color-rating-low);
+}
+
+.rating-mid {
+    background-color: var(--color-rating-mid);
+}
+
+.rating-high {
+    background-color: var(--color-rating-high);
+}
+
+.mood-text {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+}
+
+.mood-notes {
+    margin: var(--space-3) 0 0;
+    padding-left: var(--space-3);
+    border-left: 3px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+.mood-notes::before {
+    content: "\201C";
+}
+
+.mood-notes::after {
+    content: "\201D";
+}
+
+.empty-state {
+    padding: var(--space-6);
+    text-align: center;
+    color: var(--color-text-muted);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+/* ==========================================================================
+   Chart (moods.html trend page)
+   ========================================================================== */
+
+.chart-wrap {
+    position: relative;
+    margin: var(--space-5) 0;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 640px) {
+    body {
+        padding: var(--space-4) var(--space-3);
+    }
+
+    .container {
+        padding: var(--space-4);
+    }
+
+    h1 {
+        font-size: var(--font-size-xl);
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .mood-card-header {
+        flex-wrap: wrap;
+    }
 }
