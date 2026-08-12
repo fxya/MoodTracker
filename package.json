@@ -1,0 +1,12 @@
+{
+  "name": "moodtracker-js-tests",
+  "private": true,
+  "type": "commonjs",
+  "description": "Unit tests for the pure JS helpers behind the /moods charts (src/main/resources/static/js). Not part of the Gradle build or the app runtime - the app itself ships plain <script> tags with no bundler.",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0"
+  }
+}

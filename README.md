@@ -110,6 +110,14 @@ is running and configured as described above before running tests.
 `WeatherServiceTest` mocks the HTTP calls to Open-Meteo, so no network access
 is needed for that part.
 
+The pure JS logic behind the `/moods` charts (`mood-analysis.js`: series
+building, dry/rainy bucketing) has its own small Vitest suite, separate from
+the Gradle build and not part of the app runtime:
+```bash
+npm install
+npm test
+```
+
 ## Docker
 
 1. Build the application JAR:
