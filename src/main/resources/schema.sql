@@ -2,14 +2,15 @@
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
     username VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL
+    password VARCHAR(255) NOT NULL,
+    location VARCHAR(255)
 );
 
 -- DDL for weather table
 CREATE TABLE weather (
     id BIGSERIAL PRIMARY KEY,
-    location_name VARCHAR(255),
-    current_temp_c DOUBLE PRECISION
+    temperature_c DOUBLE PRECISION,
+    precipitation_mm DOUBLE PRECISION
 );
 
 -- DDL for mood table

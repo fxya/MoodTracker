@@ -9,9 +9,12 @@
     <div class="container">
         <div class="header">
             <span>Hi, <strong sec:authentication="name">User</strong>!</span>
-            <form th:action="@{/logout}" method="post" style="display: inline;">
-                <button type="submit" class="btn btn-secondary">Logout</button>
-            </form>
+            <div class="header-actions">
+                <a class="btn btn-secondary" th:href="@{/settings}">Settings</a>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-secondary">Logout</button>
+                </form>
+            </div>
         </div>
 
         <h1>Mood Tracker</h1>
@@ -46,8 +49,6 @@
                           th:text="${mood.moodRating} + '/10'">Rating</span>
                 </div>
                 <p class="mood-text" th:text="${mood.mood}">Mood Text</p>
-                <!-- Display weather info if available and needed -->
-                <!-- <span th:if="${mood.weather}" th:text="'Weather: ' + ${mood.weather.description}">Weather</span> -->
                 <p class="mood-notes" th:if="${mood.notes != null && !mood.notes.isEmpty()}" th:text="${mood.notes}">Notes</p>
             </li>
         </ul>

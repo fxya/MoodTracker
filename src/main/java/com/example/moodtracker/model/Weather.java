@@ -1,13 +1,10 @@
 package com.example.moodtracker.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-
-/* Nested classes used to represent structure of nested JSON object returned from
-weather API for proper deserialisation */
-
 import lombok.Data;
 
+/* Only the fields we actually use are persisted: current temperature and
+   precipitation at the time a mood was logged. */
 @Entity
 @Data
 public class Weather {
@@ -15,23 +12,12 @@ public class Weather {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
-    @Embedded
-    private Location location;
-    @Embedded
-    private Current current;
 
-    @Embeddable
-    @Data
-    public static class Location {
-        private String name;
-        // Add other fields as needed
-    }
+    // Explicit column names: Hibernate's default naming strategy doesn't insert an
+    // underscore before a trailing single capital letter (temperatureC -> temperaturec).
+    @Column(name = "temperature_c")
+    private Double temperatureC;
 
-    @Embeddable
-    @Data
-    public static class Current {
-        @JsonProperty("temp_c")
-        private Double tempC;
-        // Add other fields as needed
-    }
+    @Column(name = "precipitation_mm")
+    private Double precipitationMm;
 }

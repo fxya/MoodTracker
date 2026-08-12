@@ -30,6 +30,9 @@ public class User {
     // For now, we'll keep roles simple. A Set<String> could be used for more complex role management.
     // private String role; // Example: "ROLE_USER"
 
+    // Free-text location (e.g. "London") used to look up weather for each mood.
+    private String location;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Mood> moods = new HashSet<>();
 

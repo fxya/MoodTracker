@@ -1,7 +1,7 @@
 # MoodTracker
 
 Basic mood tracker application allowing user to record moods. 
-Saves data from external weather API to correlate weather with mood. 
+Saves the local weather alongside each mood to help correlate weather with mood. 
 Secured with Spring Security.
 
 ## Features
@@ -9,9 +9,12 @@ Secured with Spring Security.
 - Register and log in as a user; moods are scoped to your own account.
 - Record daily moods with a 1-10 rating and free-text notes.
 - View your mood history, including notes.
-- Correlate moods with weather data from an external API (via the
-  separate `/api/moods` + `/moods` trend-chart endpoints, requires a
-  WeatherAPI key).
+- Set a location under **Settings**, and the weather (temperature and
+  precipitation) at that location is automatically looked up and saved
+  with every mood you log. Weather lookup uses [Open-Meteo](https://open-meteo.com/),
+  which is free and requires no API key.
+- View mood-rating, temperature, and precipitation trend charts on the
+  `/moods` page.
 - Secure application with Spring Security.
 
 ## Technologies Used
@@ -21,7 +24,7 @@ Secured with Spring Security.
 - Spring Data JPA
 - Thymeleaf
 - PostgreSQL
-- WeatherAPI (for weather data)
+- Open-Meteo (for weather data - free, no API key required)
 - Docker
 - Gradle
 
@@ -32,23 +35,10 @@ Secured with Spring Security.
     git clone <repository_url>
     cd <repository_directory>
     ```
-2.  **Configure WeatherAPI Key:**
-    To fetch weather data, the application requires a WeatherAPI key.
-    *   **Environment Variable (Recommended):** Set the `WEATHER_API_KEY` environment variable to your API key. This is the preferred method for both local development and Docker deployment.
-        ```bash
-        export WEATHER_API_KEY="your_actual_api_key"
-        ```
-        The application will always check for this environment variable first.
-    *   **`.apikey` File (Alternative for Local Development):** For local development only, if the `WEATHER_API_KEY` environment variable is not set, the application can fall back to reading the key from a file named `.apikey` located in the project's root directory.
-        Example content for `.apikey`:
-        ```
-        your_actual_api_key
-        ```
-        This method is not used for Docker deployments.
-3.  **Ensure Java 21 is installed.** The included `./gradlew` wrapper downloads
+2.  **Ensure Java 21 is installed.** The included `./gradlew` wrapper downloads
     a matching Gradle distribution automatically, so a separate Gradle install
     isn't required.
-4.  **Set up PostgreSQL:** Ensure you have PostgreSQL running. Configure the database connection in `src/main/resources/application.properties` if your setup differs from the default:
+3.  **Set up PostgreSQL:** Ensure you have PostgreSQL running. Configure the database connection in `src/main/resources/application.properties` if your setup differs from the default:
     ```properties
     spring.datasource.url=jdbc:postgresql://localhost:5432/moodtracker
     spring.datasource.username=youruser
@@ -56,12 +46,14 @@ Secured with Spring Security.
     ```
     You will likely need to create the `moodtracker` database manually if it doesn't already exist (e.g., `CREATE DATABASE moodtracker;`).
     The application will automatically create the necessary database tables on startup if they don't exist, thanks to the `schema.sql` script.
-5.  **Run the application:**
+4.  **Run the application:**
     ```bash
     ./gradlew bootRun
     ```
-6.  **Access the application:** Open your web browser and go to `http://localhost:8080`,
-    register an account, then log in.
+5.  **Access the application:** Open your web browser and go to `http://localhost:8080`,
+    register an account, then log in. Set a location under **Settings** to
+    start recording weather with your moods - no API key or extra setup
+    needed, since weather lookup uses [Open-Meteo](https://open-meteo.com/).
 
 ## Running Tests
 
@@ -71,10 +63,9 @@ Secured with Spring Security.
 
 The test suite (controllers, `WeatherService`, and application context) runs
 against a real local PostgreSQL instance — make sure one is running and
-configured as described above before running tests. No real `WEATHER_API_KEY`
-is required; the test task sets a dummy value so `WeatherServiceTest` (which
-mocks the actual HTTP call) doesn't depend on a real key or a local `.apikey`
-file.
+configured as described above before running tests. `WeatherServiceTest`
+mocks the HTTP calls to Open-Meteo, so no network access or API key is
+needed to run it.
 
 ## Docker
 
@@ -102,16 +93,15 @@ This application can be built and run using Docker.
 **Run the Docker Container:**
 
 1.  **Run the container:**
-    To run the container, you should provide the WeatherAPI key via an environment variable.
     ```bash
-    docker run -e WEATHER_API_KEY="your_actual_api_key" -p 8080:8080 --name moodtracker moodtracker-app
+    docker run -p 8080:8080 --name moodtracker moodtracker-app
     ```
-    - `-e WEATHER_API_KEY="your_actual_api_key"`: Sets the `WEATHER_API_KEY` environment variable inside the container. Replace `"your_actual_api_key"` with your actual WeatherAPI key.
     - `-p 8080:8080`: Maps port 8080 of the container to port 8080 on your host.
     - `--name moodtracker`: Assigns a name to your running container for easier management.
     - `moodtracker-app`: The name of the image to use.
 
-    The `WEATHER_API_KEY` environment variable is the **sole method** for providing the API key to the Docker container, as the `.apikey` file is not copied into the image.
+    No API key or extra configuration is needed for weather lookups - Open-Meteo
+    requires none.
 
     Similar to local setup, the application within the Docker container will automatically create the necessary database tables (schema) in the `moodtracker` database upon startup if they don't already exist, based on the `src/main/resources/schema.sql` script. You must ensure that the PostgreSQL database (whether it's a separate Docker container or a cloud instance) is accessible to the application container and that the `moodtracker` database exists.
 
