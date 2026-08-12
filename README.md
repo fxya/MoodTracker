@@ -31,6 +31,8 @@ every user only ever sees their own data.
 
 **Account**
 - Register and log in; all data is scoped to your own account.
+- Optionally set your time zone in Settings so mood dates/times display in
+  your own zone instead of the server's.
 - Change your password or delete your account (and everything in it)
   from Settings.
 
@@ -58,18 +60,19 @@ so a separate Gradle install isn't required.
    createdb moodtracker
    ```
    (or `psql -c "CREATE DATABASE moodtracker;"`)
-3. Check the datasource settings in `src/main/resources/application.properties`
-   match your local PostgreSQL setup:
+3. The datasource defaults in `src/main/resources/application.properties`
+   assume PostgreSQL on `localhost:5432` with user `postgres`:
    ```properties
-   spring.datasource.url=jdbc:postgresql://localhost:5432/moodtracker
-   spring.datasource.username=postgres
-   spring.datasource.password=your_postgres_password
+   spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/moodtracker}
+   spring.datasource.username=${DB_USERNAME:postgres}
+   spring.datasource.password=${DB_PASSWORD:your_postgres_password}
    ```
-   The committed values are placeholders for local development only - update
-   them to match your own PostgreSQL user, or override them with environment
-   variables, before running anywhere beyond your own machine. Tables are
-   created automatically on first run via `schema.sql`, and Hibernate adds
-   any new columns on top of that as the app evolves (`ddl-auto=update`).
+   If your local setup differs, either edit those defaults or set the
+   `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` environment variables - the same
+   variables are how you'd override the committed placeholder credentials
+   before running anywhere beyond your own machine. Tables are created
+   automatically on first run via `schema.sql`, and Hibernate adds any new
+   columns on top of that as the app evolves (`ddl-auto=update`).
 4. Run the app:
    ```bash
    ./gradlew bootRun
@@ -77,9 +80,24 @@ so a separate Gradle install isn't required.
 5. Open `http://localhost:8080`, register an account, and log in. Set a
    location under Settings to start recording weather with your moods.
 
-On first startup, a demo account (`testuser` / `password`) is also created
-automatically if it doesn't already exist - handy for quickly poking around
-without registering, but not something to rely on outside local development.
+### Profiles
+
+The `dev` Spring profile is active by default (see `spring.profiles.active` in
+`application.properties`), which is what makes step 4 work with no further
+setup: on first startup it seeds a demo account (`testuser` / `password`) -
+handy for quickly poking around without registering, but not something to
+rely on outside local development. Running with any other profile active
+(`SPRING_PROFILES_ACTIVE=prod ./gradlew bootRun`, for example) skips that
+seeding. A real deployment should set `SPRING_PROFILES_ACTIVE` to something
+other than `dev`, in addition to overriding the database credentials above.
+
+### Login/registration rate limiting
+
+`POST /login` and `POST /register` are rate-limited per client IP (20
+attempts per 5-minute window, in-memory, reset on restart) to blunt naive
+automated credential-stuffing and account-enumeration attempts. It's a
+single-instance, best-effort deterrent, not a replacement for a proper
+WAF/gateway-level defense in a real deployment.
 
 ## Running tests
 
@@ -102,15 +120,21 @@ is needed for that part.
    ```bash
    docker build -t moodtracker-app .
    ```
-3. Run the container:
+3. Run the container, pointing it at a reachable PostgreSQL instance:
    ```bash
-   docker run -p 8080:8080 --name moodtracker moodtracker-app
+   docker run -p 8080:8080 --name moodtracker \
+     -e DB_URL=jdbc:postgresql://<host>:5432/moodtracker \
+     -e DB_USERNAME=<username> \
+     -e DB_PASSWORD=<password> \
+     -e SPRING_PROFILES_ACTIVE=prod \
+     moodtracker-app
    ```
 
-The container needs network access to a PostgreSQL database matching the
-`spring.datasource.*` settings (create one separately, or point it at a
-reachable existing instance), and outbound HTTPS access to Open-Meteo for
-weather lookups. No API key is required for Open-Meteo.
+The container needs network access to that PostgreSQL database (`localhost`
+won't resolve to the host machine from inside the container - use the host's
+address, a linked container, or a managed database instead), and outbound
+HTTPS access to Open-Meteo for weather lookups. No API key is required for
+Open-Meteo.
 
 To stop and remove the container:
 ```bash
