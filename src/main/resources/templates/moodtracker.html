@@ -19,6 +19,9 @@
 
         <h1>Mood Tracker</h1>
 
+        <div class="alert alert-success" th:if="${moodUpdated}">Mood updated.</div>
+        <div class="alert alert-success" th:if="${moodDeleted}">Mood deleted.</div>
+
         <h2>Add New Mood</h2>
         <form th:action="@{/moodtracker/add}" th:object="${newMood}" method="post">
             <div>
@@ -50,6 +53,13 @@
                 </div>
                 <p class="mood-text" th:text="${mood.mood}">Mood Text</p>
                 <p class="mood-notes" th:if="${mood.notes != null && !mood.notes.isEmpty()}" th:text="${mood.notes}">Notes</p>
+                <div class="mood-card-actions">
+                    <a class="btn btn-secondary btn-sm" th:href="@{/moodtracker/{id}/edit(id=${mood.id})}">Edit</a>
+                    <form th:action="@{/moodtracker/{id}/delete(id=${mood.id})}" method="post"
+                          onsubmit="return confirm('Delete this mood entry? This cannot be undone.');" style="display: inline;">
+                        <button type="submit" class="btn btn-secondary btn-sm">Delete</button>
+                    </form>
+                </div>
             </li>
         </ul>
     </div>

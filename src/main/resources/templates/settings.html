@@ -31,6 +31,43 @@
             </p>
             <button type="submit" class="btn btn-primary">Save Settings</button>
         </form>
+
+        <h2>Change Password</h2>
+
+        <div class="alert alert-success" th:if="${passwordChanged}">Password changed.</div>
+        <div class="alert alert-danger" th:if="${passwordError}" th:text="${passwordError}">Password Error</div>
+
+        <form th:action="@{/settings/password}" method="post">
+            <div>
+                <label for="current-password">Current password:</label>
+                <input type="password" id="current-password" name="currentPassword" required/>
+            </div>
+            <div>
+                <label for="new-password">New password:</label>
+                <input type="password" id="new-password" name="newPassword" required/>
+            </div>
+            <div>
+                <label for="confirm-password">Confirm new password:</label>
+                <input type="password" id="confirm-password" name="confirmPassword" required/>
+            </div>
+            <button type="submit" class="btn btn-primary">Change Password</button>
+        </form>
+
+        <h2>Danger Zone</h2>
+
+        <div class="alert alert-danger" th:if="${deleteError}" th:text="${deleteError}">Delete Error</div>
+
+        <div class="danger-zone">
+            <p>Deleting your account permanently removes it and every mood you've logged. This cannot be undone.</p>
+            <form th:action="@{/settings/delete-account}" method="post"
+                  onsubmit="return confirm('Delete your account and all your moods? This cannot be undone.');">
+                <div>
+                    <label for="delete-password">Password:</label>
+                    <input type="password" id="delete-password" name="password" required/>
+                </div>
+                <button type="submit" class="btn btn-danger">Delete Account</button>
+            </form>
+        </div>
     </div>
 </body>
 </html>

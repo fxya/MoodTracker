@@ -17,6 +17,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.Model;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -25,6 +27,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -153,5 +156,97 @@ public class MoodControllerTest {
         verify(model, times(1)).addAttribute(eq("moods"), anyList());
         verify(model, times(1)).addAttribute(eq("newMood"), any(Mood.class));
         verify(model, times(1)).addAttribute(eq("username"), eq(testUsername));
+    }
+
+    @Test
+    void testShowEditForm() {
+        Mood mood = new Mood();
+        mood.setId(5L);
+        mood.setMood("Happy");
+        mood.setMoodRating(8);
+
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+        when(moodRepository.findByIdAndUser(5L, testUser)).thenReturn(Optional.of(mood));
+
+        String viewName = moodController.showEditForm(5L, model, authentication);
+
+        assertEquals("mood-edit", viewName);
+        verify(model).addAttribute("mood", mood);
+    }
+
+    @Test
+    void testShowEditForm_notOwnedByCurrentUser_returnsNotFound() {
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+        when(moodRepository.findByIdAndUser(5L, testUser)).thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> moodController.showEditForm(5L, model, authentication));
+        assertEquals(404, exception.getStatusCode().value());
+    }
+
+    @Test
+    void testUpdateMood() {
+        Mood mood = new Mood();
+        mood.setId(5L);
+        mood.setMood("Sad");
+        mood.setMoodRating(3);
+        Instant originalDate = Instant.parse("2026-01-01T00:00:00Z");
+        mood.setDate(originalDate);
+
+        RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
+
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+        when(moodRepository.findByIdAndUser(5L, testUser)).thenReturn(Optional.of(mood));
+
+        String viewName = moodController.updateMood(5L, "Happy", 9, "Feeling better",
+                authentication, redirectAttributes);
+
+        assertEquals("redirect:/moodtracker", viewName);
+        assertEquals("Happy", mood.getMood());
+        assertEquals(9, mood.getMoodRating());
+        assertEquals("Feeling better", mood.getNotes());
+        // Editing only touches text/rating/notes - date must be untouched.
+        assertEquals(originalDate, mood.getDate());
+        verify(moodRepository).save(mood);
+        verify(redirectAttributes).addFlashAttribute("moodUpdated", true);
+    }
+
+    @Test
+    void testUpdateMood_notOwnedByCurrentUser_returnsNotFound() {
+        RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+        when(moodRepository.findByIdAndUser(5L, testUser)).thenReturn(Optional.empty());
+
+        assertThrows(ResponseStatusException.class,
+                () -> moodController.updateMood(5L, "Happy", 9, null, authentication, redirectAttributes));
+        verify(moodRepository, never()).save(any());
+    }
+
+    @Test
+    void testDeleteMood() {
+        Mood mood = new Mood();
+        mood.setId(5L);
+
+        RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
+
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+        when(moodRepository.findByIdAndUser(5L, testUser)).thenReturn(Optional.of(mood));
+
+        String viewName = moodController.deleteMood(5L, authentication, redirectAttributes);
+
+        assertEquals("redirect:/moodtracker", viewName);
+        verify(moodRepository).delete(mood);
+        verify(redirectAttributes).addFlashAttribute("moodDeleted", true);
+    }
+
+    @Test
+    void testDeleteMood_notOwnedByCurrentUser_returnsNotFound() {
+        RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+        when(moodRepository.findByIdAndUser(5L, testUser)).thenReturn(Optional.empty());
+
+        assertThrows(ResponseStatusException.class,
+                () -> moodController.deleteMood(5L, authentication, redirectAttributes));
+        verify(moodRepository, never()).delete(any());
     }
 }
