@@ -19,8 +19,25 @@
 
         <h1>Mood Tracker</h1>
 
+        <div class="alert alert-success" th:if="${moodSaved}">Mood saved.</div>
         <div class="alert alert-success" th:if="${moodUpdated}">Mood updated.</div>
         <div class="alert alert-success" th:if="${moodDeleted}">Mood deleted.</div>
+
+        <div class="stat-card" th:if="${weeklySummary.hasData()}">
+            <div class="stat-value" th:text="${#numbers.formatDecimal(weeklySummary.averageThisWeek(), 1, 1)} + '/10'">Avg</div>
+            <div class="stat-label">
+                Average mood this week (<span th:text="${weeklySummary.entryCount()}">0</span>
+                <span th:text="${weeklySummary.entryCount() == 1} ? 'entry' : 'entries'">entries</span>)
+            </div>
+            <div class="stat-trend" th:if="${weeklySummary.hasComparison()}"
+                 th:classappend="${weeklySummary.delta() > 0} ? 'trend-up' : (${weeklySummary.delta() < 0} ? 'trend-down' : 'trend-flat')">
+                <span th:text="${weeklySummary.delta() > 0} ? '▲' : (${weeklySummary.delta() < 0} ? '▼' : '—')">-</span>
+                <span th:text="${#numbers.formatDecimal(T(java.lang.Math).abs(weeklySummary.delta()), 1, 1)} + ' vs. last week'">vs last week</span>
+            </div>
+        </div>
+        <div class="stat-card stat-card-empty" th:unless="${weeklySummary.hasData()}">
+            <p>No moods logged this week yet.</p>
+        </div>
 
         <h2>Add New Mood</h2>
         <form th:action="@{/moodtracker/add}" th:object="${newMood}" method="post">
@@ -40,8 +57,32 @@
         </form>
 
         <h2>Your Moods</h2>
-        <div class="empty-state" th:if="${#lists.isEmpty(moods)}">
+
+        <form th:action="@{/moodtracker}" method="get" class="filter-form">
+            <div>
+                <label for="q">Search:</label>
+                <input type="text" id="q" name="q" th:value="${q}" placeholder="Search mood or notes"/>
+            </div>
+            <div>
+                <label for="minRating">Min rating:</label>
+                <input type="number" id="minRating" name="minRating" th:value="${minRating}" min="1" max="10"/>
+            </div>
+            <div>
+                <label for="maxRating">Max rating:</label>
+                <input type="number" id="maxRating" name="maxRating" th:value="${maxRating}" min="1" max="10"/>
+            </div>
+            <div class="filter-form-actions">
+                <button type="submit" class="btn btn-secondary">Filter</button>
+                <a class="btn btn-secondary" th:if="${q != null or minRating != null or maxRating != null}"
+                   th:href="@{/moodtracker}">Clear</a>
+            </div>
+        </form>
+
+        <div class="empty-state" th:if="${#lists.isEmpty(moods) and moodPage.totalElements == 0 and q == null and minRating == null and maxRating == null}">
             <p>You haven't recorded any moods yet. Add your first one above!</p>
+        </div>
+        <div class="empty-state" th:if="${#lists.isEmpty(moods) and (q != null or minRating != null or maxRating != null)}">
+            <p>No moods match your search/filters. <a th:href="@{/moodtracker}">Clear filters</a> to see everything.</p>
         </div>
         <ul th:unless="${#lists.isEmpty(moods)}">
             <li class="mood-card" th:each="mood : ${moods}">
@@ -52,6 +93,13 @@
                           th:text="${mood.moodRating} + '/10'">Rating</span>
                 </div>
                 <p class="mood-text" th:text="${mood.mood}">Mood Text</p>
+                <p class="mood-weather" th:if="${mood.weather != null}">
+                    <span th:if="${mood.weather.temperatureC != null}"
+                          th:text="${#numbers.formatDecimal(mood.weather.temperatureC, 1, 1)} + '°C'">Temp</span>
+                    <span th:if="${mood.weather.temperatureC != null && mood.weather.precipitationMm != null}"> · </span>
+                    <span th:if="${mood.weather.precipitationMm != null}"
+                          th:text="${#numbers.formatDecimal(mood.weather.precipitationMm, 1, 1)} + 'mm rain'">Precip</span>
+                </p>
                 <p class="mood-notes" th:if="${mood.notes != null && !mood.notes.isEmpty()}" th:text="${mood.notes}">Notes</p>
                 <div class="mood-card-actions">
                     <a class="btn btn-secondary btn-sm" th:href="@{/moodtracker/{id}/edit(id=${mood.id})}">Edit</a>
@@ -62,6 +110,14 @@
                 </div>
             </li>
         </ul>
+
+        <div class="pagination" th:if="${moodPage.totalPages > 1}">
+            <a class="btn btn-secondary btn-sm" th:if="${moodPage.hasPrevious()}"
+               th:href="@{/moodtracker(q=${q}, minRating=${minRating}, maxRating=${maxRating}, page=${moodPage.number - 1})}">Previous</a>
+            <span class="pagination-status">Page <span th:text="${moodPage.number + 1}">1</span> of <span th:text="${moodPage.totalPages}">1</span></span>
+            <a class="btn btn-secondary btn-sm" th:if="${moodPage.hasNext()}"
+               th:href="@{/moodtracker(q=${q}, minRating=${minRating}, maxRating=${maxRating}, page=${moodPage.number + 1})}">Next</a>
+        </div>
     </div>
 </body>
 </html>

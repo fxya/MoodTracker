@@ -3,6 +3,7 @@ package com.example.moodtracker.controller;
 import com.example.moodtracker.model.Mood;
 import com.example.moodtracker.model.User;
 import com.example.moodtracker.model.Weather;
+import com.example.moodtracker.model.WeeklySummary;
 import com.example.moodtracker.repository.MoodRepository;
 import com.example.moodtracker.repository.UserRepository;
 import com.example.moodtracker.service.WeatherService;
@@ -13,6 +14,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,12 +27,19 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -79,14 +91,16 @@ public class MoodControllerTest {
         when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
 
         ArgumentCaptor<Mood> moodArgumentCaptor = ArgumentCaptor.forClass(Mood.class);
+        RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
 
         // Act
-        String viewName = moodController.addMood(moodFormData, authentication);
+        String viewName = moodController.addMood(moodFormData, authentication, redirectAttributes);
 
         // Assert
         assertEquals("redirect:/moodtracker", viewName);
         verify(userRepository, times(1)).findByUsername(testUsername);
         verify(moodRepository, times(1)).save(moodArgumentCaptor.capture());
+        verify(redirectAttributes).addFlashAttribute("moodSaved", true);
 
         Mood savedMood = moodArgumentCaptor.getValue();
         assertNotNull(savedMood.getUser());
@@ -117,7 +131,7 @@ public class MoodControllerTest {
         moodFormData.setMoodRating(7);
 
         ArgumentCaptor<Mood> moodArgumentCaptor = ArgumentCaptor.forClass(Mood.class);
-        moodController.addMood(moodFormData, authentication);
+        moodController.addMood(moodFormData, authentication, mock(RedirectAttributes.class));
 
         verify(moodRepository).save(moodArgumentCaptor.capture());
         assertEquals(london, moodArgumentCaptor.getValue().getWeather());
@@ -135,7 +149,7 @@ public class MoodControllerTest {
         moodFormData.setMoodRating(3);
 
         ArgumentCaptor<Mood> moodArgumentCaptor = ArgumentCaptor.forClass(Mood.class);
-        String viewName = moodController.addMood(moodFormData, authentication);
+        String viewName = moodController.addMood(moodFormData, authentication, mock(RedirectAttributes.class));
 
         assertEquals("redirect:/moodtracker", viewName);
         verify(moodRepository).save(moodArgumentCaptor.capture());
@@ -143,19 +157,131 @@ public class MoodControllerTest {
     }
 
     @Test
-    void testGetMoodsPage() { // Basic test for the GET endpoint
-        // Arrange
+    void testGetMoodsPage_defaultsToFirstPageWithNoFilters() {
         when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
-        // when(moodRepository.findByUserOrderByDateDesc(testUser)).thenReturn(Collections.emptyList()); // Example
+        Page<Mood> emptyPage = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 5), 0);
+        when(moodRepository.search(eq(testUser), isNull(), isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(emptyPage);
+        when(moodRepository.findByUserAndDateAfterOrderByDateDesc(eq(testUser), any(Instant.class)))
+                .thenReturn(Collections.emptyList());
 
-        // Act
-        String viewName = moodController.getMoodsPage(model, authentication);
+        String viewName = moodController.getMoodsPage(null, null, null, 0, model, authentication);
 
-        // Assert
         assertEquals("moodtracker", viewName);
-        verify(model, times(1)).addAttribute(eq("moods"), anyList());
-        verify(model, times(1)).addAttribute(eq("newMood"), any(Mood.class));
-        verify(model, times(1)).addAttribute(eq("username"), eq(testUsername));
+        verify(model).addAttribute(eq("moods"), eq(emptyPage.getContent()));
+        verify(model).addAttribute(eq("moodPage"), eq(emptyPage));
+        verify(model).addAttribute(eq("q"), isNull());
+        verify(model).addAttribute(eq("minRating"), isNull());
+        verify(model).addAttribute(eq("maxRating"), isNull());
+        verify(model).addAttribute(eq("newMood"), any(Mood.class));
+        verify(model).addAttribute(eq("username"), eq(testUsername));
+        verify(model).addAttribute(eq("weeklySummary"), any(WeeklySummary.class));
+    }
+
+    @Test
+    void testGetMoodsPage_passesSearchFilterAndPageToRepository() {
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+        when(moodRepository.search(eq(testUser), eq("happy"), eq(4), eq(9), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(moodRepository.findByUserAndDateAfterOrderByDateDesc(eq(testUser), any(Instant.class)))
+                .thenReturn(Collections.emptyList());
+
+        moodController.getMoodsPage("happy", 4, 9, 2, model, authentication);
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(moodRepository).search(eq(testUser), eq("happy"), eq(4), eq(9), pageableCaptor.capture());
+        assertEquals(2, pageableCaptor.getValue().getPageNumber());
+        assertEquals(5, pageableCaptor.getValue().getPageSize());
+    }
+
+    @Test
+    void testGetMoodsPage_trimsSearchQuery() {
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+        when(moodRepository.search(eq(testUser), eq("happy"), isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(moodRepository.findByUserAndDateAfterOrderByDateDesc(eq(testUser), any(Instant.class)))
+                .thenReturn(Collections.emptyList());
+
+        moodController.getMoodsPage("  happy  ", null, null, 0, model, authentication);
+        verify(moodRepository).search(eq(testUser), eq("happy"), isNull(), isNull(), any(Pageable.class));
+    }
+
+    @Test
+    void testGetMoodsPage_blankSearchQueryNormalizedToNull() {
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+        when(moodRepository.search(eq(testUser), isNull(), isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(moodRepository.findByUserAndDateAfterOrderByDateDesc(eq(testUser), any(Instant.class)))
+                .thenReturn(Collections.emptyList());
+
+        moodController.getMoodsPage("   ", null, null, 0, model, authentication);
+        verify(moodRepository).search(eq(testUser), isNull(), isNull(), isNull(), any(Pageable.class));
+    }
+
+    @Test
+    void testGetMoodsPage_negativePageClampedToZero() {
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+        when(moodRepository.search(eq(testUser), isNull(), isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(moodRepository.findByUserAndDateAfterOrderByDateDesc(eq(testUser), any(Instant.class)))
+                .thenReturn(Collections.emptyList());
+
+        moodController.getMoodsPage(null, null, null, -3, model, authentication);
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(moodRepository).search(eq(testUser), isNull(), isNull(), isNull(), pageableCaptor.capture());
+        assertEquals(0, pageableCaptor.getValue().getPageNumber());
+    }
+
+    @Test
+    void testGetMoodsPage_weeklySummaryComparesThisWeekToLastWeek() {
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+        when(moodRepository.search(eq(testUser), isNull(), isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        Instant now = Instant.now();
+        List<Mood> recent = List.of(
+                moodWithRating(8, now.minus(1, ChronoUnit.DAYS)),
+                moodWithRating(6, now.minus(2, ChronoUnit.DAYS)),
+                moodWithRating(3, now.minus(9, ChronoUnit.DAYS))
+        );
+        when(moodRepository.findByUserAndDateAfterOrderByDateDesc(eq(testUser), any(Instant.class)))
+                .thenReturn(recent);
+
+        ArgumentCaptor<WeeklySummary> summaryCaptor = ArgumentCaptor.forClass(WeeklySummary.class);
+        moodController.getMoodsPage(null, null, null, 0, model, authentication);
+        verify(model).addAttribute(eq("weeklySummary"), summaryCaptor.capture());
+
+        WeeklySummary summary = summaryCaptor.getValue();
+        assertEquals(2, summary.entryCount());
+        assertEquals(7.0, summary.averageThisWeek());
+        assertEquals(3.0, summary.averageLastWeek());
+        assertTrue(summary.hasComparison());
+        assertEquals(4.0, summary.delta(), 0.0001);
+    }
+
+    @Test
+    void testGetMoodsPage_weeklySummary_noEntriesAtAll() {
+        when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+        when(moodRepository.search(eq(testUser), isNull(), isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(moodRepository.findByUserAndDateAfterOrderByDateDesc(eq(testUser), any(Instant.class)))
+                .thenReturn(Collections.emptyList());
+
+        ArgumentCaptor<WeeklySummary> summaryCaptor = ArgumentCaptor.forClass(WeeklySummary.class);
+        moodController.getMoodsPage(null, null, null, 0, model, authentication);
+        verify(model).addAttribute(eq("weeklySummary"), summaryCaptor.capture());
+
+        WeeklySummary summary = summaryCaptor.getValue();
+        assertFalse(summary.hasData());
+        assertFalse(summary.hasComparison());
+    }
+
+    private Mood moodWithRating(int rating, Instant date) {
+        Mood mood = new Mood();
+        mood.setMoodRating(rating);
+        mood.setDate(date);
+        return mood;
     }
 
     @Test
