@@ -94,7 +94,7 @@ public class MoodControllerTest {
         // when(moodRepository.findByUserOrderByDateDesc(testUser)).thenReturn(Collections.emptyList()); // Example
 
         // Act
-        String viewName = moodController.getMoodsPage(model);
+        String viewName = moodController.getMoodsPage(model, authentication);
 
         // Assert
         assertEquals("moodtracker", viewName);

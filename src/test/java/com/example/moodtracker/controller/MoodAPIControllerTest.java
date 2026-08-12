@@ -8,25 +8,29 @@ import com.fasterxml.jackson.databind.ObjectMapper; // For JSON conversion
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.servlet.view.RedirectView;
 import reactor.core.publisher.Mono; // For WeatherService mock
 import reactor.test.StepVerifier;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -34,6 +38,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class) // Added for Mockito support with @Mock and @InjectMocks
 @WebMvcTest(MoodAPIController.class) // Test only the MoodAPIController
 public class MoodAPIControllerTest {
+
+    // Matches the exact "yyyy-MM-dd'T'HH:mm:ss.SSSX" format MoodAPIController expects
+    // for clientCurrentDateTime; Instant.now().toString() varies in fraction-digit
+    // count and isn't reliably parseable by that pattern.
+    private static final DateTimeFormatter CLIENT_DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC);
 
     @Autowired
     private MockMvc mockMvc;
@@ -52,10 +62,6 @@ public class MoodAPIControllerTest {
     @Mock
     private WeatherService weatherService; // Renamed from mockBeanWeatherService
 
-    @InjectMocks
-    private MoodAPIController moodAPIController;
-
-
     @Autowired
     private ObjectMapper objectMapper; // For converting objects to JSON
 
@@ -65,16 +71,28 @@ public class MoodAPIControllerTest {
     @BeforeEach
     void setUp() {
         // Mock Weather data for MockMvc tests
-        Weather mockMvcWeather = new Weather("Cloudy with a chance of meatballs", "mvc-test-icon-01d");
+        Weather mockMvcWeather = new Weather();
 
         // Mock WeatherService response for MockMvc tests using the @MockBean instance
         when(mockBeanWeatherService.fetchWeather(anyString())).thenReturn(Mono.just(mockMvcWeather));
 
-        mood1 = new Mood(1L, "Happy", Instant.now(), 7, mockMvcWeather);
-        mood2 = new Mood(2L, "Sad", Instant.now().minusSeconds(3600), 3, mockMvcWeather);
+        mood1 = new Mood();
+        mood1.setId(1L);
+        mood1.setMood("Happy");
+        mood1.setDate(Instant.now());
+        mood1.setMoodRating(7);
+        mood1.setWeather(mockMvcWeather);
+
+        mood2 = new Mood();
+        mood2.setId(2L);
+        mood2.setMood("Sad");
+        mood2.setDate(Instant.now().minusSeconds(3600));
+        mood2.setMoodRating(3);
+        mood2.setWeather(mockMvcWeather);
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     void addMood_shouldSaveMoodWithRatingAndRedirect() throws Exception {
         // Mock the save operation for MockMvc tests using the @MockBean instance
         when(mockBeanMoodRepository.save(any(Mood.class))).thenAnswer(invocation -> {
@@ -89,12 +107,19 @@ public class MoodAPIControllerTest {
             return moodToSave;
         });
 
-        mockMvc.perform(post("/api/moods")
+        // The controller returns a Mono<RedirectView>, so Spring MVC processes it
+        // asynchronously; the redirect only shows up after the async dispatch completes.
+        var mvcResult = mockMvc.perform(post("/api/moods")
+                        .with(csrf())
                         .param("mood", "Very Happy") // Corrected param name to "mood"
-                        .param("clientCurrentDateTime", Instant.now().toString())
+                        .param("clientCurrentDateTime", CLIENT_DATE_TIME_FORMATTER.format(Instant.now()))
                         .param("moodRating", "9")
                         .param("location", "TestCityForMvc") // Added location param for this test
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().is3xxRedirection()) // Expecting a redirect
                 .andExpect(redirectedUrl("/moods"));
 
@@ -104,6 +129,7 @@ public class MoodAPIControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     void getAllMoods_shouldReturnMoodsWithRatings() throws Exception {
         // Ensure this uses the @MockBean for findAll
         when(mockBeanMoodRepository.findAll()).thenReturn(Arrays.asList(mood1, mood2));
@@ -124,7 +150,7 @@ public class MoodAPIControllerTest {
         Integer moodRating = 9;
         String dateTimeString = "2024-01-15T10:00:00.000Z"; // Valid ISO 8601 format
         String testLocation = "Paris";
-        Weather mockWeather = new Weather("Sunny", "01d"); // Example weather
+        Weather mockWeather = new Weather(); // Example weather
 
         // Mocking WeatherService to return specific weather for the testLocation
         when(weatherService.fetchWeather(testLocation)).thenReturn(Mono.just(mockWeather));
@@ -133,7 +159,8 @@ public class MoodAPIControllerTest {
         when(moodRepository.save(any(Mood.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
-        Mono<RedirectView> result = moodAPIController.addMood(moodText, moodRating, dateTimeString, testLocation);
+        MoodAPIController controller = new MoodAPIController(moodRepository, weatherService);
+        Mono<RedirectView> result = controller.addMood(moodText, moodRating, dateTimeString, testLocation);
 
         // Then
         // Verify the reactive stream completes and the redirect URL is correct

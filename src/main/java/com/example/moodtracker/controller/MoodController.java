@@ -6,7 +6,6 @@ import com.example.moodtracker.repository.MoodRepository;
 import com.example.moodtracker.repository.UserRepository; // To fetch the current user
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,8 +28,7 @@ public class MoodController {
 
     // Display moods for the current user and a form to add a new mood
     @GetMapping
-    public String getMoodsPage(Model model) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    public String getMoodsPage(Model model, Authentication authentication) {
         String currentUsername = authentication.getName();
 
         User user = userRepository.findByUsername(currentUsername)
