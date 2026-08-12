@@ -7,8 +7,21 @@ document.addEventListener('DOMContentLoaded', function () {
             renderTable(data);
             renderMoodChart(data);
             renderWeatherCharts(data);
+            renderCorrelationChart(data);
         });
 });
+
+const MONTH_ABBREVIATIONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// Matches the "dd-MMM-yyyy HH:mm" format already used for mood dates on
+// moodtracker.html, so a mood's date reads the same way everywhere in the app.
+function formatDateTime(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = MONTH_ABBREVIATIONS[date.getMonth()];
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}-${month}-${date.getFullYear()} ${hours}:${minutes}`;
+}
 
 function renderTable(data) {
     const tableBody = document.querySelector('tbody');
@@ -18,7 +31,8 @@ function renderTable(data) {
         const ratingCell = document.createElement('td');
         const moodCell = document.createElement('td');
 
-        dateCell.textContent = mood.date;
+        const date = new Date(mood.date);
+        dateCell.textContent = Number.isNaN(date.getTime()) ? mood.date : formatDateTime(date);
         ratingCell.textContent = mood.moodRating !== null && mood.moodRating !== undefined ? mood.moodRating : "N/A";
         moodCell.textContent = mood.mood;
 
@@ -141,4 +155,74 @@ function renderWeatherCharts(data) {
             label: 'Precipitation (mm)'
         });
     }
+}
+
+// Average mood rating on dry vs. rainy days - an ordinal (dry -> rainy) rather
+// than categorical comparison, so both bars share one hue at two lightness
+// steps instead of unrelated colors, per the dataviz ordinal-ramp guidance.
+function renderCorrelationChart(data) {
+    const section = document.getElementById('correlationSection');
+    const canvas = document.getElementById('correlationChart');
+    const caption = document.getElementById('correlationCaption');
+    if (!section || !canvas || !caption) {
+        return;
+    }
+
+    const withWeather = data.filter(mood =>
+        mood.weather &&
+        mood.weather.precipitationMm !== null && mood.weather.precipitationMm !== undefined &&
+        mood.moodRating !== null && mood.moodRating !== undefined
+    );
+
+    const average = moods => moods.reduce((sum, mood) => sum + mood.moodRating, 0) / moods.length;
+
+    const buckets = [
+        { label: 'Dry', moods: withWeather.filter(mood => mood.weather.precipitationMm === 0), color: '#7fa8d9' },
+        { label: 'Rainy', moods: withWeather.filter(mood => mood.weather.precipitationMm > 0), color: '#2062a8' }
+    ].filter(bucket => bucket.moods.length > 0);
+
+    // Need at least one day in each bucket for the comparison to mean anything -
+    // a single bar isn't a correlation.
+    if (buckets.length < 2) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = '';
+    caption.textContent = buckets.map(bucket => `${bucket.label}: n=${bucket.moods.length}`).join(' · ');
+
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: buckets.map(bucket => bucket.label),
+            datasets: [{
+                label: 'Average Mood Rating',
+                data: buckets.map(bucket => Number(average(bucket.moods).toFixed(2))),
+                backgroundColor: buckets.map(bucket => bucket.color),
+                borderRadius: 4,
+                maxBarThickness: 96
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 10,
+                    grid: {
+                        color: '#e3ded6'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
 }

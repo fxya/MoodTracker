@@ -3,8 +3,10 @@ package com.example.moodtracker.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.ToString;
 
 import java.util.Set;
 import java.util.HashSet;
@@ -33,7 +35,13 @@ public class User {
     // Free-text location (e.g. "London") used to look up weather for each mood.
     private String location;
 
+    // Excluded from equals/hashCode/toString: Mood has a back-reference to User, and
+    // Lombok's @Data on both sides would otherwise recurse through user <-> moods,
+    // which corrupts Hibernate's lazy-collection loading (ConcurrentModificationException
+    // when a HashSet's hashCode is computed reentrantly while it's still being loaded).
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Set<Mood> moods = new HashSet<>();
 
     // Constructors, getters, setters, equals, hashCode are handled by Lombok @Data, @NoArgsConstructor, @AllArgsConstructor

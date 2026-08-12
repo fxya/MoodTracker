@@ -16,6 +16,9 @@
             <div th:if="${param.logout}" class="alert alert-success">
                 You have been logged out.
             </div>
+            <div th:if="${param.accountDeleted}" class="alert alert-success">
+                Your account has been deleted.
+            </div>
             <div th:if="${registrationSuccess}" class="alert alert-success" th:text="${registrationSuccess}">
                 Registration successful! Please login.
             </div>

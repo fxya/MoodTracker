@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity6">
+<head>
+    <title>Edit Mood</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span>Hi, <strong sec:authentication="name">User</strong>!</span>
+            <div class="header-actions">
+                <a class="btn btn-secondary" th:href="@{/moodtracker}">Back to Mood Tracker</a>
+            </div>
+        </div>
+
+        <h1>Edit Mood</h1>
+
+        <form th:action="@{/moodtracker/{id}/edit(id=${mood.id})}" th:object="${mood}" method="post">
+            <div>
+                <label for="mood-text">Mood:</label>
+                <input type="text" id="mood-text" th:field="*{mood}" required/>
+            </div>
+            <div>
+                <label for="mood-rating">Rating (1-10):</label>
+                <input type="number" id="mood-rating" th:field="*{moodRating}" min="1" max="10" required/>
+            </div>
+            <div>
+                <label for="notes">Notes:</label>
+                <textarea id="notes" th:field="*{notes}" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a class="btn btn-secondary" th:href="@{/moodtracker}">Cancel</a>
+        </form>
+    </div>
+</body>
+</html>

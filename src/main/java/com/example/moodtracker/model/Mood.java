@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.Instant;
 
@@ -24,9 +26,13 @@ public class Mood {
     @OneToOne(cascade = CascadeType.ALL)
     private Weather weather;
 
+    // Excluded from equals/hashCode/toString: see the matching note on User.moods -
+    // both sides of this bidirectional relationship must break the cycle.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id") // This specifies the foreign key column in the 'mood' table
     @JsonIgnore // Avoid serializing the owning User (and its back-reference cycle) via /api/moods
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private User user;
 
     public Mood(String mood, Instant date, Integer moodRating, User user, Weather weather, String notes) {
