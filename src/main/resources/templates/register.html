@@ -5,28 +5,32 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
     <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
-<body class="centered-page">
-    <div class="container">
-        <div class="brand-mark" aria-hidden="true">🙂</div>
-        <h1>Register New User</h1>
-        <form th:action="@{/register}" method="post" th:object="${user}"> <!-- Assuming a UserController handles /register -->
-            <div>
-                <label for="username">Username:</label>
+<body class="flex min-h-screen items-center justify-center bg-bg p-6 font-sans text-ink antialiased">
+    <div class="w-full max-w-md rounded-2xl border border-border-soft bg-surface p-8 shadow-sm">
+        <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-surface-alt text-2xl" aria-hidden="true">🙂</div>
+        <h1 class="mb-6 text-center font-display text-2xl text-ink">Register New User</h1>
+        <form th:action="@{/register}" method="post" th:object="${user}">
+            <div class="mb-4">
+                <label for="username" class="mb-1.5 block text-xs font-semibold text-ink-muted">Username:</label>
                 <input type="text" id="username" name="username" th:field="*{username}"
-                       th:classappend="${#fields.hasErrors('username')} ? 'is-invalid'" required autofocus/>
-                <div class="field-error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">Username Error</div>
+                       th:classappend="${#fields.hasErrors('username')} ? 'border-danger' : 'border-border'"
+                       class="w-full rounded-lg border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"
+                       required autofocus/>
+                <div class="mt-1.5 text-sm text-danger" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">Username Error</div>
             </div>
-            <div>
-                <label for="password">Password:</label>
+            <div class="mb-5">
+                <label for="password" class="mb-1.5 block text-xs font-semibold text-ink-muted">Password:</label>
                 <input type="password" id="password" name="password" th:field="*{password}"
-                       th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'" required/>
-                <div class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Password Error</div>
+                       th:classappend="${#fields.hasErrors('password')} ? 'border-danger' : 'border-border'"
+                       class="w-full rounded-lg border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"
+                       required/>
+                <div class="mt-1.5 text-sm text-danger" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Password Error</div>
             </div>
             <div>
-                <button type="submit" class="btn btn-primary">Register</button>
+                <button type="submit" class="w-full rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-deep">Register</button>
             </div>
         </form>
-        <p class="auth-footer">Already have an account? <a th:href="@{/login}">Login here</a></p>
+        <p class="mt-4 text-center text-sm text-ink-muted">Already have an account? <a class="font-semibold text-accent hover:text-accent-deep" th:href="@{/login}">Login here</a></p>
     </div>
 </body>
 </html>

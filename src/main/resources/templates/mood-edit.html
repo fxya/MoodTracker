@@ -5,27 +5,33 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
     <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
-<body>
-    <div class="container">
+<body class="min-h-screen bg-bg font-sans text-ink antialiased">
+    <div class="mx-auto max-w-xl px-4 py-10">
         <div th:replace="~{fragments/header :: backHeader}"></div>
 
-        <h1>Edit Mood</h1>
+        <h1 class="mb-6 font-display text-2xl text-ink">Edit Mood</h1>
 
-        <form th:action="@{/moodtracker/{id}/edit(id=${mood.id})}" th:object="${mood}" method="post">
-            <div>
-                <label for="mood-text">Mood:</label>
-                <input type="text" id="mood-text" th:field="*{mood}" required/>
+        <form th:action="@{/moodtracker/{id}/edit(id=${mood.id})}" th:object="${mood}" method="post"
+              class="rounded-2xl border border-border-soft bg-surface p-6 shadow-sm">
+            <div class="mb-4">
+                <label for="mood-text" class="mb-1.5 block text-xs font-semibold text-ink-muted">Mood:</label>
+                <input type="text" id="mood-text" th:field="*{mood}" required
+                       class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
             </div>
-            <div>
-                <label for="mood-rating">Rating (1-10):</label>
-                <input type="number" id="mood-rating" th:field="*{moodRating}" min="1" max="10" required/>
+            <div class="mb-4">
+                <label for="mood-rating" class="mb-1.5 block text-xs font-semibold text-ink-muted">Rating (1-10):</label>
+                <input type="number" id="mood-rating" th:field="*{moodRating}" min="1" max="10" required
+                       class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
             </div>
-            <div>
-                <label for="notes">Notes:</label>
-                <textarea id="notes" th:field="*{notes}" rows="3"></textarea>
+            <div class="mb-5">
+                <label for="notes" class="mb-1.5 block text-xs font-semibold text-ink-muted">Notes:</label>
+                <textarea id="notes" th:field="*{notes}" rows="3"
+                          class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-            <a class="btn btn-secondary" th:href="@{/moodtracker}">Cancel</a>
+            <div class="flex gap-3">
+                <button type="submit" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-deep">Save Changes</button>
+                <a class="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink" th:href="@{/moodtracker}">Cancel</a>
+            </div>
         </form>
     </div>
 </body>

@@ -5,36 +5,38 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
     <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
-<body class="centered-page">
-    <div class="container">
-        <div class="brand-mark" aria-hidden="true">🙂</div>
-        <h1>Login</h1>
+<body class="flex min-h-screen items-center justify-center bg-bg p-6 font-sans text-ink antialiased">
+    <div class="w-full max-w-md rounded-2xl border border-border-soft bg-surface p-8 shadow-sm">
+        <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-surface-alt text-2xl" aria-hidden="true">🙂</div>
+        <h1 class="mb-6 text-center font-display text-2xl text-ink">Login</h1>
         <form th:action="@{/login}" method="post">
-            <div th:if="${param.error}" class="alert alert-danger" data-testid="alert-danger">
+            <div th:if="${param.error}" class="mb-4 rounded-lg border border-danger-border bg-danger-bg px-4 py-2.5 text-sm text-danger" data-testid="alert-danger">
                 Invalid username or password.
             </div>
-            <div th:if="${param.logout}" class="alert alert-success" data-testid="alert-success">
+            <div th:if="${param.logout}" class="mb-4 rounded-lg border border-success-border bg-success-bg px-4 py-2.5 text-sm text-success" data-testid="alert-success">
                 You have been logged out.
             </div>
-            <div th:if="${param.accountDeleted}" class="alert alert-success" data-testid="alert-success">
+            <div th:if="${param.accountDeleted}" class="mb-4 rounded-lg border border-success-border bg-success-bg px-4 py-2.5 text-sm text-success" data-testid="alert-success">
                 Your account has been deleted.
             </div>
-            <div th:if="${registrationSuccess}" class="alert alert-success" data-testid="alert-success" th:text="${registrationSuccess}">
+            <div th:if="${registrationSuccess}" class="mb-4 rounded-lg border border-success-border bg-success-bg px-4 py-2.5 text-sm text-success" data-testid="alert-success" th:text="${registrationSuccess}">
                 Registration successful! Please login.
             </div>
-            <div>
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="username" required autofocus/>
+            <div class="mb-4">
+                <label for="username" class="mb-1.5 block text-xs font-semibold text-ink-muted">Username:</label>
+                <input type="text" id="username" name="username" required autofocus
+                       class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
+            </div>
+            <div class="mb-5">
+                <label for="password" class="mb-1.5 block text-xs font-semibold text-ink-muted">Password:</label>
+                <input type="password" id="password" name="password" required
+                       class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
             </div>
             <div>
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required/>
-            </div>
-            <div>
-                <button type="submit" class="btn btn-primary">Log in</button>
+                <button type="submit" class="w-full rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-deep">Log in</button>
             </div>
         </form>
-        <p class="auth-footer">No account? <a th:href="@{/register}">Register here</a></p>
+        <p class="mt-4 text-center text-sm text-ink-muted">No account? <a class="font-semibold text-accent hover:text-accent-deep" th:href="@{/register}">Register here</a></p>
     </div>
 </body>
 </html>
