@@ -118,6 +118,26 @@ npm install
 npm test
 ```
 
+## Code style
+
+Java follows the [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html),
+enforced via [Spotless](https://github.com/diffplug/spotless) with
+[google-java-format](https://github.com/google/google-java-format):
+```bash
+./gradlew spotlessCheck   # fails the build on a style violation (also runs as part of `check`)
+./gradlew spotlessApply   # reformats in place
+```
+
+JS/CSS are formatted with [Prettier](https://prettier.io/) (config in
+`.prettierrc.json`; kept single-quote and 4-space to match the existing code
+rather than Prettier's bare defaults):
+```bash
+npm run format:check
+npm run format
+```
+Thymeleaf templates are intentionally not auto-formatted - a generic HTML
+formatter risks mangling `th:*` attribute syntax.
+
 ## Docker
 
 1. Build the application JAR:
