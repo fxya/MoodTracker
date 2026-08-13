@@ -74,12 +74,12 @@ function computeMoodByWeatherBuckets(data) {
         {
             label: 'Dry',
             moods: withWeather.filter((mood) => mood.weather.precipitationMm === 0),
-            color: '#7fa8d9',
+            color: '#a8c2c9',
         },
         {
             label: 'Rainy',
             moods: withWeather.filter((mood) => mood.weather.precipitationMm > 0),
-            color: '#2062a8',
+            color: '#5b7f8c',
         },
     ]
         .filter((bucket) => bucket.moods.length > 0)
