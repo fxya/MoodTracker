@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity6">
+<body>
+    <!-- For pages with their own top-level navigation (currently just moodtracker.html) -->
+    <div th:fragment="primaryHeader" class="header">
+        <span>Hi, <strong sec:authentication="name">User</strong>!</span>
+        <div class="header-actions">
+            <a class="btn btn-secondary" th:href="@{/moods}">Trends</a>
+            <a class="btn btn-secondary" th:href="@{/settings}">Settings</a>
+            <form th:action="@{/logout}" method="post" style="display: inline;">
+                <button type="submit" class="btn btn-secondary">Logout</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- For pages one level below the mood tracker (settings, mood-edit) -->
+    <div th:fragment="backHeader" class="header">
+        <span>Hi, <strong sec:authentication="name">User</strong>!</span>
+        <div class="header-actions">
+            <a class="btn btn-secondary" th:href="@{/moodtracker}">Back to Mood Tracker</a>
+            <form th:action="@{/logout}" method="post" style="display: inline;">
+                <button type="submit" class="btn btn-secondary">Logout</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
