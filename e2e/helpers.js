@@ -12,10 +12,15 @@ export function uniqueUsername() {
 
 export async function registerAndLogin(
     page,
-    { username = uniqueUsername(), password = TEST_PASSWORD } = {},
+    {
+        username = uniqueUsername(),
+        password = TEST_PASSWORD,
+        email = `${username}@example.com`,
+    } = {},
 ) {
     await page.goto('/register');
     await page.fill('#username', username);
+    await page.fill('#email', email);
     await page.fill('#password', password);
     await page.click('button:has-text("Register")');
     await page.waitForURL('**/login');
@@ -25,7 +30,7 @@ export async function registerAndLogin(
     await page.click('button:has-text("Log in")');
     await page.waitForURL('**/moodtracker');
 
-    return { username, password };
+    return { username, password, email };
 }
 
 export async function addMood(page, { text, rating, notes = '' }) {

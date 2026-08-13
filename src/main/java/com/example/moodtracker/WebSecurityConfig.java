@@ -43,6 +43,9 @@ public class WebSecurityConfig {
                         "/home",
                         "/login",
                         "/register", // For potential registration page
+                        "/forgot-password",
+                        "/reset-password",
+                        "/actuator/health",
                         "/css/**",
                         "/js/**",
                         "/images/**")

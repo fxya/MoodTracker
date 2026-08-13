@@ -42,6 +42,7 @@ class UserControllerTest {
   void setUp() {
     newUser = new User();
     newUser.setUsername("newuser");
+    newUser.setEmail("newuser@example.com");
     newUser.setPassword("plaintext-password");
     bindingResult = new BeanPropertyBindingResult(newUser, "user");
   }
@@ -69,6 +70,7 @@ class UserControllerTest {
   @Test
   void registerUser_savesNewUserWithEncodedPasswordAndRedirectsToLogin() {
     when(userRepository.findByUsername("newuser")).thenReturn(Optional.empty());
+    when(userRepository.findByEmail("newuser@example.com")).thenReturn(Optional.empty());
     when(passwordEncoder.encode("plaintext-password")).thenReturn("encoded-password");
 
     String viewName = userController.registerUser(newUser, bindingResult, redirectAttributes);
@@ -78,6 +80,7 @@ class UserControllerTest {
     ArgumentCaptor<User> savedUserCaptor = ArgumentCaptor.forClass(User.class);
     verify(userRepository).save(savedUserCaptor.capture());
     assertEquals("newuser", savedUserCaptor.getValue().getUsername());
+    assertEquals("newuser@example.com", savedUserCaptor.getValue().getEmail());
     assertEquals("encoded-password", savedUserCaptor.getValue().getPassword());
     verify(redirectAttributes).addFlashAttribute(eq("registrationSuccess"), anyString());
   }
@@ -87,6 +90,21 @@ class UserControllerTest {
     User existingUser = new User();
     existingUser.setUsername("newuser");
     when(userRepository.findByUsername("newuser")).thenReturn(Optional.of(existingUser));
+
+    String viewName = userController.registerUser(newUser, bindingResult, redirectAttributes);
+
+    assertEquals("redirect:/register", viewName);
+    verify(userRepository, never()).save(any(User.class));
+    verify(passwordEncoder, never()).encode(anyString());
+  }
+
+  @Test
+  void registerUser_rejectsDuplicateEmailWithoutSaving() {
+    User existingUser = new User();
+    existingUser.setUsername("someoneelse");
+    existingUser.setEmail("newuser@example.com");
+    when(userRepository.findByUsername("newuser")).thenReturn(Optional.empty());
+    when(userRepository.findByEmail("newuser@example.com")).thenReturn(Optional.of(existingUser));
 
     String viewName = userController.registerUser(newUser, bindingResult, redirectAttributes);
 

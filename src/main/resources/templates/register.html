@@ -18,6 +18,14 @@
                        required autofocus/>
                 <div class="mt-1.5 text-sm text-danger" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">Username Error</div>
             </div>
+            <div class="mb-4">
+                <label for="email" class="mb-1.5 block text-xs font-semibold text-ink-muted">Email:</label>
+                <input type="email" id="email" name="email" th:field="*{email}"
+                       th:classappend="${#fields.hasErrors('email')} ? 'border-danger' : 'border-border'"
+                       class="w-full rounded-lg border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"
+                       required/>
+                <div class="mt-1.5 text-sm text-danger" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Email Error</div>
+            </div>
             <div class="mb-5">
                 <label for="password" class="mb-1.5 block text-xs font-semibold text-ink-muted">Password:</label>
                 <input type="password" id="password" name="password" th:field="*{password}"

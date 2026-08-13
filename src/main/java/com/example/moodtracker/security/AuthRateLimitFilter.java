@@ -14,16 +14,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Simple in-memory, per-IP rate limit on POST /login and POST /register, to blunt naive automated
- * credential-stuffing and account-enumeration attempts. Deliberately basic: no new dependency, no
- * shared state across instances - just enough to slow down a single attacking source hitting a
- * single instance. Memory use is bounded by the number of distinct (path, IP) pairs seen within the
- * window, which is an accepted tradeoff for a lightweight, dependency-free defense.
+ * Simple in-memory, per-IP rate limit on POST /login, /register, and /forgot-password, to blunt
+ * naive automated credential-stuffing and account-enumeration attempts. Deliberately basic: no new
+ * dependency, no shared state across instances - just enough to slow down a single attacking source
+ * hitting a single instance. Memory use is bounded by the number of distinct (path, IP) pairs seen
+ * within the window, which is an accepted tradeoff for a lightweight, dependency-free defense.
  */
 @Component
 public class AuthRateLimitFilter extends OncePerRequestFilter {
 
-  private static final Set<String> LIMITED_PATHS = Set.of("/login", "/register");
+  private static final Set<String> LIMITED_PATHS =
+      Set.of("/login", "/register", "/forgot-password");
 
   private final int maxAttempts;
   private final Duration window;
