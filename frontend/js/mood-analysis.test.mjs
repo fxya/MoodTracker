@@ -4,6 +4,7 @@ import {
     formatDate,
     buildSeries,
     computeMoodByWeatherBuckets,
+    buildHeatmapData,
 } from './mood-analysis.js';
 
 describe('formatDateTime', () => {
@@ -127,5 +128,62 @@ describe('computeMoodByWeatherBuckets', () => {
         const buckets = computeMoodByWeatherBuckets(data);
 
         expect(buckets).toEqual([{ label: 'Dry', color: '#a8c2c9', count: 1, average: 8 }]);
+    });
+});
+
+describe('buildHeatmapData', () => {
+    it('groups by local calendar day and sorts chronologically', () => {
+        const data = [
+            { date: '2026-01-03T12:00:00Z', moodRating: 5 },
+            { date: '2026-01-01T12:00:00Z', moodRating: 8 },
+        ];
+
+        expect(buildHeatmapData(data)).toEqual([
+            { date: '2026-01-01', averageRating: 8, count: 1 },
+            { date: '2026-01-03', averageRating: 5, count: 1 },
+        ]);
+    });
+
+    it('averages multiple entries on the same day', () => {
+        const data = [
+            { date: '2026-01-01T08:00:00Z', moodRating: 4 },
+            { date: '2026-01-01T20:00:00Z', moodRating: 8 },
+        ];
+
+        expect(buildHeatmapData(data)).toEqual([
+            { date: '2026-01-01', averageRating: 6, count: 2 },
+        ]);
+    });
+
+    it('drops entries with a missing rating rather than averaging them in as zero', () => {
+        const data = [
+            { date: '2026-01-01T08:00:00Z', moodRating: 6 },
+            { date: '2026-01-01T20:00:00Z', moodRating: null },
+        ];
+
+        expect(buildHeatmapData(data)).toEqual([
+            { date: '2026-01-01', averageRating: 6, count: 1 },
+        ]);
+    });
+
+    it('drops a day entirely when every entry on it lacks a rating', () => {
+        const data = [{ date: '2026-01-01T08:00:00Z', moodRating: null }];
+
+        expect(buildHeatmapData(data)).toEqual([]);
+    });
+
+    it('drops entries with an unparseable date', () => {
+        const data = [
+            { date: 'not-a-date', moodRating: 5 },
+            { date: '2026-01-01T00:00:00Z', moodRating: 8 },
+        ];
+
+        expect(buildHeatmapData(data)).toEqual([
+            { date: '2026-01-01', averageRating: 8, count: 1 },
+        ]);
+    });
+
+    it('returns an empty array for an empty mood list', () => {
+        expect(buildHeatmapData([])).toEqual([]);
     });
 });

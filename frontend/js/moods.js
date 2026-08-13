@@ -3,7 +3,13 @@
 // (buildSeries, computeMoodByWeatherBuckets, date formatting) live in
 // mood-analysis.js.
 import Chart from 'chart.js/auto';
-import { formatDateTime, buildSeries, computeMoodByWeatherBuckets } from './mood-analysis.js';
+import {
+    formatDateTime,
+    formatDate,
+    buildSeries,
+    computeMoodByWeatherBuckets,
+    buildHeatmapData,
+} from './mood-analysis.js';
 
 // Chart.js draws to a canvas, so its colors are plain JS values, not CSS -
 // they can't pick up the app's `@media (prefers-color-scheme: dark)` tokens
@@ -33,6 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then((data) => {
             renderTable(data);
             renderMoodChart(data);
+            renderHeatmap(data);
             renderWeatherCharts(data);
             renderCorrelationChart(data);
         });
@@ -170,6 +177,75 @@ function renderMoodChart(data) {
         label: 'Mood Rating',
         suggestedMax: 10,
     });
+}
+
+// GitHub-contributions-style grid: one cell per day, colored by that day's
+// average rating using the same low/mid/high tier tokens as the rating
+// badges elsewhere in the app. Custom CSS grid rather than a Chart.js chart -
+// Chart.js has no calendar-heatmap type, and this matches how renderTable
+// already hand-rolls plain DOM instead of pulling in a table library.
+function tierClass(averageRating) {
+    if (averageRating === null || averageRating === undefined) {
+        return 'bg-surface-alt';
+    }
+    if (averageRating <= 3) {
+        return 'bg-rating-low';
+    }
+    if (averageRating <= 6) {
+        return 'bg-rating-mid';
+    }
+    return 'bg-rating-high';
+}
+
+function renderHeatmap(data) {
+    const section = document.getElementById('heatmapSection');
+    const grid = document.getElementById('heatmapGrid');
+    if (!section || !grid) {
+        return;
+    }
+
+    const heatmapData = buildHeatmapData(data);
+    if (heatmapData.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+    section.style.display = '';
+
+    const entryByDate = new Map(heatmapData.map((entry) => [entry.date, entry]));
+
+    // Snap the range out to full weeks (Sun-Sat) so the grid always has
+    // complete columns, same as GitHub's own contributions graph.
+    const firstDate = new Date(`${heatmapData[0].date}T00:00:00`);
+    const lastDate = new Date(`${heatmapData[heatmapData.length - 1].date}T00:00:00`);
+    const gridStart = new Date(firstDate);
+    gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+    const gridEnd = new Date(lastDate);
+    gridEnd.setDate(gridEnd.getDate() + (6 - gridEnd.getDay()));
+
+    const totalDays = Math.round((gridEnd - gridStart) / (24 * 60 * 60 * 1000)) + 1;
+    const numWeeks = totalDays / 7;
+
+    grid.innerHTML = '';
+    grid.style.gridTemplateColumns = `repeat(${numWeeks}, 12px)`;
+    grid.style.gridTemplateRows = 'repeat(7, 12px)';
+
+    for (let i = 0; i < totalDays; i++) {
+        const day = new Date(gridStart);
+        day.setDate(day.getDate() + i);
+        const key = formatDate(day);
+        const entry = entryByDate.get(key);
+
+        const cell = document.createElement('div');
+        cell.className = `rounded-sm ${tierClass(entry ? entry.averageRating : null)}`;
+        cell.style.gridColumn = String(Math.floor(i / 7) + 1);
+        cell.style.gridRow = String(day.getDay() + 1);
+        const label = entry
+            ? `${key}: average mood ${entry.averageRating.toFixed(1)} (${entry.count} ${entry.count === 1 ? 'entry' : 'entries'})`
+            : `${key}: no mood logged`;
+        cell.setAttribute('aria-label', label);
+        cell.title = label;
+        grid.appendChild(cell);
+    }
 }
 
 // Temperature and precipitation are on very different scales from the mood
