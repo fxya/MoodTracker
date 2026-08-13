@@ -91,10 +91,45 @@ function computeMoodByWeatherBuckets(data) {
         }));
 }
 
+// Groups moods by local calendar day for the /moods calendar heatmap,
+// averaging moodRating when more than one entry falls on the same day (same
+// choice the weekly summary stat card already makes). Entries with a missing
+// rating or an unparseable date are dropped, matching buildSeries - a day
+// where every entry lacks a rating is dropped entirely rather than kept with
+// a null average, so the heatmap only ever colors days it has real data for.
+function buildHeatmapData(data) {
+    const ratingsByDate = new Map();
+
+    data.forEach((mood) => {
+        const date = new Date(mood.date);
+        if (
+            Number.isNaN(date.getTime()) ||
+            mood.moodRating === null ||
+            mood.moodRating === undefined
+        ) {
+            return;
+        }
+        const key = formatDate(date);
+        if (!ratingsByDate.has(key)) {
+            ratingsByDate.set(key, []);
+        }
+        ratingsByDate.get(key).push(mood.moodRating);
+    });
+
+    return Array.from(ratingsByDate.entries())
+        .map(([date, ratings]) => ({
+            date,
+            averageRating: ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length,
+            count: ratings.length,
+        }))
+        .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
 export {
     formatDateTime,
     formatDate,
     buildSeries,
     computeMoodByWeatherBuckets,
+    buildHeatmapData,
     MONTH_ABBREVIATIONS,
 };
