@@ -9,11 +9,19 @@ import com.example.moodtracker.service.WeatherService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -25,6 +33,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import reactor.core.publisher.Mono;
 
@@ -179,6 +188,131 @@ public class SettingsController {
         "backfillMessage",
         "Backfilled weather for " + backfilled + " of " + moodsMissingWeather.size() + " mood(s).");
     return "redirect:/settings";
+  }
+
+  // Only the format this app's own CSV export produces is supported
+  // (Date,Mood,Rating,Tag,Notes,TemperatureC,PrecipitationMm) - a clean,
+  // well-defined round-trip for backups/migrating between installs, not an
+  // attempt to normalize arbitrary third-party CSV formats (that would need a
+  // column-mapping UI, well beyond this feature's scope). Best-effort like the
+  // weather backfill above: rows with an invalid Date/Rating are skipped and
+  // counted rather than aborting the whole import over one bad row.
+  @PostMapping("/import-moods")
+  public String importMoods(
+      @RequestParam("file") MultipartFile file,
+      Authentication authentication,
+      RedirectAttributes redirectAttributes) {
+    User user = currentUser(authentication);
+
+    if (file.isEmpty()) {
+      redirectAttributes.addFlashAttribute("importError", "Choose a CSV file to import first.");
+      return "redirect:/settings";
+    }
+
+    List<CSVRecord> records;
+    try (Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8)) {
+      CSVFormat format =
+          CSVFormat.Builder.create(CSVFormat.DEFAULT).setHeader().setSkipHeaderRecord(true).build();
+      CSVParser parser = format.parse(reader);
+      if (!parser.getHeaderNames().containsAll(List.of("Date", "Rating"))) {
+        redirectAttributes.addFlashAttribute(
+            "importError",
+            "That doesn't look like a MoodTracker CSV export - check the file and try again.");
+        return "redirect:/settings";
+      }
+      records = parser.getRecords();
+    } catch (IOException e) {
+      log.warn(
+          "Could not read uploaded CSV for user \"{}\": {}", user.getUsername(), e.getMessage());
+      redirectAttributes.addFlashAttribute("importError", "Could not read that file.");
+      return "redirect:/settings";
+    }
+
+    // Sequential, not parallel: same single-Hibernate-session reasoning as the
+    // weather backfill loop above.
+    int imported = 0;
+    for (CSVRecord record : records) {
+      Mood mood = parseImportRow(record, user);
+      if (mood != null) {
+        moodRepository.save(mood);
+        imported++;
+      }
+    }
+
+    redirectAttributes.addFlashAttribute(
+        "importMessage",
+        "Imported " + imported + " of " + records.size() + " row(s) from the CSV.");
+    return "redirect:/settings";
+  }
+
+  // Date and Rating must be valid for a row to import at all - everything else is
+  // permissive. Weather especially is a bonus, never a blocker here, matching the
+  // app's existing weather-fetch philosophy (see MoodController.fetchWeatherForUser).
+  private Mood parseImportRow(CSVRecord record, User user) {
+    Instant date;
+    try {
+      date = Instant.parse(record.get("Date"));
+    } catch (Exception e) {
+      log.warn("Skipping CSV row {}: invalid or missing Date", record.getRecordNumber());
+      return null;
+    }
+
+    Integer rating = null;
+    String ratingText = optionalField(record, "Rating");
+    if (ratingText != null) {
+      try {
+        rating = Integer.parseInt(ratingText);
+      } catch (NumberFormatException e) {
+        log.warn(
+            "Skipping CSV row {}: unparseable Rating \"{}\"", record.getRecordNumber(), ratingText);
+        return null;
+      }
+      if (rating < 1 || rating > 10) {
+        log.warn(
+            "Skipping CSV row {}: Rating {} out of range 1-10", record.getRecordNumber(), rating);
+        return null;
+      }
+    }
+
+    Mood mood = new Mood();
+    mood.setUser(user);
+    mood.setDate(date);
+    mood.setMood(optionalField(record, "Mood"));
+    mood.setMoodRating(rating);
+    mood.setMoodTag(optionalField(record, "Tag"));
+    mood.setNotes(optionalField(record, "Notes"));
+    mood.setWeather(parseImportWeather(record));
+    return mood;
+  }
+
+  // Only creates a Weather if both fields are present and parse cleanly - a
+  // malformed or partial weather pair just means the mood imports without
+  // weather, same as if it had never been fetched in the first place.
+  private Weather parseImportWeather(CSVRecord record) {
+    String temperatureText = optionalField(record, "TemperatureC");
+    String precipitationText = optionalField(record, "PrecipitationMm");
+    if (temperatureText == null || precipitationText == null) {
+      return null;
+    }
+    try {
+      Weather weather = new Weather();
+      weather.setTemperatureC(Double.parseDouble(temperatureText));
+      weather.setPrecipitationMm(Double.parseDouble(precipitationText));
+      return weather;
+    } catch (NumberFormatException e) {
+      log.warn(
+          "Skipping weather for CSV row {}: unparseable temperature/precipitation",
+          record.getRecordNumber());
+      return null;
+    }
+  }
+
+  private String optionalField(CSVRecord record, String column) {
+    if (!record.isMapped(column)) {
+      return null;
+    }
+    String value = record.get(column);
+    return value == null || value.isBlank() ? null : value.trim();
   }
 
   // Mirrors MoodController's fallback: the server's zone when the user hasn't set
