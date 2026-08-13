@@ -7,15 +7,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <span>Hi, <strong sec:authentication="name">User</strong>!</span>
-            <div class="header-actions">
-                <a class="btn btn-secondary" th:href="@{/settings}">Settings</a>
-                <form th:action="@{/logout}" method="post" style="display: inline;">
-                    <button type="submit" class="btn btn-secondary">Logout</button>
-                </form>
-            </div>
-        </div>
+        <div th:replace="~{fragments/header :: primaryHeader}"></div>
 
         <h1>Mood Tracker</h1>
 
@@ -87,7 +79,7 @@
         <ul th:unless="${#lists.isEmpty(moods)}">
             <li class="mood-card" th:each="mood : ${moods}">
                 <div class="mood-card-header">
-                    <span class="mood-date" th:text="${#temporals.format(mood.date, 'dd-MMM-yyyy HH:mm')}">Date</span>
+                    <span class="mood-date" th:text="${mood.formattedDate}">Date</span>
                     <span class="rating-badge"
                           th:classappend="${mood.moodRating <= 3} ? 'rating-low' : (${mood.moodRating <= 6} ? 'rating-mid' : 'rating-high')"
                           th:text="${mood.moodRating} + '/10'">Rating</span>

@@ -7,12 +7,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <span>Hi, <strong sec:authentication="name">User</strong>!</span>
-            <div class="header-actions">
-                <a class="btn btn-secondary" th:href="@{/moodtracker}">Back to Mood Tracker</a>
-            </div>
-        </div>
+        <div th:replace="~{fragments/header :: backHeader}"></div>
 
         <h1>Edit Mood</h1>
 

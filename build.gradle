@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.1.0'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'com.diffplug.spotless' version '7.0.2'
 }
 
 group = 'com.example'
@@ -36,10 +37,20 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'io.projectreactor:reactor-test'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+// Google Java Style Guide, enforced via google-java-format. `spotlessCheck` runs
+// as part of `check`; `spotlessApply` reformats in place.
+spotless {
+    java {
+        googleJavaFormat()
+        target 'src/**/*.java'
+    }
 }

@@ -7,19 +7,12 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <span>Hi, <strong sec:authentication="name">User</strong>!</span>
-            <div class="header-actions">
-                <a class="btn btn-secondary" th:href="@{/moodtracker}">Back to Mood Tracker</a>
-                <form th:action="@{/logout}" method="post" style="display: inline;">
-                    <button type="submit" class="btn btn-secondary">Logout</button>
-                </form>
-            </div>
-        </div>
+        <div th:replace="~{fragments/header :: backHeader}"></div>
 
         <h1>Settings</h1>
 
         <div class="alert alert-success" th:if="${settingsSaved}">Settings saved.</div>
+        <div class="alert alert-danger" th:if="${settingsError}" th:text="${settingsError}">Settings Error</div>
 
         <form th:action="@{/settings}" method="post">
             <div>
@@ -28,6 +21,17 @@
             </div>
             <p class="hero-tagline">
                 Used to look up the weather whenever you log a mood. Leave blank to skip weather tracking.
+            </p>
+            <div>
+                <label for="time-zone">Time zone:</label>
+                <select id="time-zone" name="timeZone">
+                    <option value="">Use server default</option>
+                    <option th:each="zone : ${availableTimeZones}"
+                            th:value="${zone}" th:text="${zone}" th:selected="${zone == timeZone}">Zone</option>
+                </select>
+            </div>
+            <p class="hero-tagline">
+                Used to show mood dates and times in your own time zone rather than the server's.
             </p>
             <button type="submit" class="btn btn-primary">Save Settings</button>
         </form>
