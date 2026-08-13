@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -453,7 +454,15 @@ public class MoodControllerTest {
 
     String viewName =
         moodController.updateMood(
-            5L, "Happy", 9, "Feeling better", "Content", authentication, redirectAttributes);
+            5L,
+            "Happy",
+            9,
+            "Feeling better",
+            "Content",
+            null,
+            null,
+            authentication,
+            redirectAttributes);
 
     assertEquals("redirect:/moodtracker", viewName);
     assertEquals("Happy", mood.getMood());
@@ -476,9 +485,72 @@ public class MoodControllerTest {
     when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
     when(moodRepository.findByIdAndUser(5L, testUser)).thenReturn(Optional.of(mood));
 
-    moodController.updateMood(5L, "Happy", 9, null, "", authentication, redirectAttributes);
+    moodController.updateMood(
+        5L, "Happy", 9, null, "", null, null, authentication, redirectAttributes);
 
     assertNull(mood.getMoodTag());
+  }
+
+  @Test
+  void testUpdateMood_createsWeatherWhenMoodHadNone() {
+    Mood mood = new Mood();
+    mood.setId(5L);
+
+    RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+    when(moodRepository.findByIdAndUser(5L, testUser)).thenReturn(Optional.of(mood));
+
+    moodController.updateMood(
+        5L, "Happy", 9, null, null, 21.5, 0.0, authentication, redirectAttributes);
+
+    assertNotNull(mood.getWeather());
+    assertEquals(21.5, mood.getWeather().getTemperatureC());
+    assertEquals(0.0, mood.getWeather().getPrecipitationMm());
+  }
+
+  @Test
+  void testUpdateMood_editsExistingWeatherInPlace() {
+    Mood mood = new Mood();
+    mood.setId(5L);
+    Weather weather = new Weather();
+    weather.setTemperatureC(14.0);
+    weather.setPrecipitationMm(0.2);
+    mood.setWeather(weather);
+
+    RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+    when(moodRepository.findByIdAndUser(5L, testUser)).thenReturn(Optional.of(mood));
+
+    moodController.updateMood(
+        5L, "Happy", 9, null, null, 25.0, null, authentication, redirectAttributes);
+
+    // Same Weather instance mutated in place (not replaced) - the @OneToOne has no
+    // orphanRemoval, so swapping the reference would leave the old row orphaned.
+    assertSame(weather, mood.getWeather());
+    assertEquals(25.0, mood.getWeather().getTemperatureC());
+    // Precipitation wasn't submitted (null) - must stay at its prior value.
+    assertEquals(0.2, mood.getWeather().getPrecipitationMm());
+  }
+
+  @Test
+  void testUpdateMood_blankWeatherFieldsLeaveWeatherUnchanged() {
+    Mood mood = new Mood();
+    mood.setId(5L);
+    Weather weather = new Weather();
+    weather.setTemperatureC(14.0);
+    weather.setPrecipitationMm(0.2);
+    mood.setWeather(weather);
+
+    RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+    when(moodRepository.findByIdAndUser(5L, testUser)).thenReturn(Optional.of(mood));
+
+    moodController.updateMood(
+        5L, "Happy", 9, null, null, null, null, authentication, redirectAttributes);
+
+    assertSame(weather, mood.getWeather());
+    assertEquals(14.0, mood.getWeather().getTemperatureC());
+    assertEquals(0.2, mood.getWeather().getPrecipitationMm());
   }
 
   @Test
@@ -491,7 +563,7 @@ public class MoodControllerTest {
         ResponseStatusException.class,
         () ->
             moodController.updateMood(
-                5L, "Happy", 9, null, null, authentication, redirectAttributes));
+                5L, "Happy", 9, null, null, null, null, authentication, redirectAttributes));
     verify(moodRepository, never()).save(any());
   }
 

@@ -51,11 +51,27 @@
                     <option value="Content">Content</option>
                 </select>
             </div>
-            <div class="mb-5">
+            <div class="mb-4">
                 <label for="notes" class="mb-1.5 block text-xs font-semibold text-ink-muted">Notes:</label>
                 <textarea id="notes" th:field="*{notes}" rows="3"
                           class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"></textarea>
             </div>
+            <p class="mb-2 text-xs font-semibold text-ink-muted">Weather (optional correction):</p>
+            <div class="mb-4 grid grid-cols-2 gap-3">
+                <div>
+                    <label for="temperature-c" class="mb-1.5 block text-xs text-ink-faint">Temperature (°C):</label>
+                    <input type="number" id="temperature-c" name="temperatureC" step="0.1"
+                           th:value="${mood.weather != null ? mood.weather.temperatureC : null}"
+                           class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
+                </div>
+                <div>
+                    <label for="precipitation-mm" class="mb-1.5 block text-xs text-ink-faint">Precipitation (mm):</label>
+                    <input type="number" id="precipitation-mm" name="precipitationMm" step="0.1" min="0"
+                           th:value="${mood.weather != null ? mood.weather.precipitationMm : null}"
+                           class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
+                </div>
+            </div>
+            <p class="mb-5 text-xs text-ink-faint">Leave blank to keep the recorded value unchanged.</p>
             <div class="flex gap-3">
                 <button type="submit" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-deep">Save Changes</button>
                 <a class="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink" th:href="@{/moodtracker}">Cancel</a>
