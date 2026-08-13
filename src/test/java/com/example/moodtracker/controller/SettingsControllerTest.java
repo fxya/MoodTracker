@@ -1,6 +1,7 @@
 package com.example.moodtracker.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
@@ -14,6 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +27,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -416,5 +419,112 @@ public class SettingsControllerTest {
     verify(moodRepository, times(1)).save(any());
     verify(redirectAttributes)
         .addFlashAttribute("backfillMessage", "Backfilled weather for 1 of 2 mood(s).");
+  }
+
+  private MockMultipartFile csvFile(String content) {
+    return new MockMultipartFile(
+        "file", "moods.csv", "text/csv", content.getBytes(StandardCharsets.UTF_8));
+  }
+
+  @Test
+  void testImportMoods_emptyFile_returnsErrorWithoutParsing() {
+    when(authentication.getName()).thenReturn(testUsername);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+    MockMultipartFile empty = new MockMultipartFile("file", "moods.csv", "text/csv", new byte[0]);
+    String viewName = settingsController.importMoods(empty, authentication, redirectAttributes);
+
+    assertEquals("redirect:/settings", viewName);
+    verify(redirectAttributes)
+        .addFlashAttribute("importError", "Choose a CSV file to import first.");
+    verify(moodRepository, never()).save(any());
+  }
+
+  @Test
+  void testImportMoods_missingRequiredColumns_returnsError() {
+    when(authentication.getName()).thenReturn(testUsername);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+    String viewName =
+        settingsController.importMoods(
+            csvFile("Foo,Bar\r\n1,2\r\n"), authentication, redirectAttributes);
+
+    assertEquals("redirect:/settings", viewName);
+    verify(redirectAttributes)
+        .addFlashAttribute(
+            "importError",
+            "That doesn't look like a MoodTracker CSV export - check the file and try again.");
+    verify(moodRepository, never()).save(any());
+  }
+
+  @Test
+  void testImportMoods_headerOnlyCsv_importsZeroWithoutError() {
+    when(authentication.getName()).thenReturn(testUsername);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+    settingsController.importMoods(
+        csvFile("Date,Mood,Rating,Tag,Notes,TemperatureC,PrecipitationMm\r\n"),
+        authentication,
+        redirectAttributes);
+
+    verify(moodRepository, never()).save(any());
+    verify(redirectAttributes)
+        .addFlashAttribute("importMessage", "Imported 0 of 0 row(s) from the CSV.");
+  }
+
+  @Test
+  void testImportMoods_importsValidRowsAndSkipsInvalidOnes() {
+    when(authentication.getName()).thenReturn(testUsername);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+    String csv =
+        "Date,Mood,Rating,Tag,Notes,TemperatureC,PrecipitationMm\r\n"
+            + "2026-01-15T10:30:00Z,Happy,8,Content,Great day,14.5,0.2\r\n"
+            + "not-a-date,Sad,3,,,,\r\n"
+            + "2026-01-16T10:30:00Z,Okay,15,,,,\r\n"
+            + "2026-01-17T10:30:00Z,Fine,,,,,\r\n";
+
+    ArgumentCaptor<Mood> moodCaptor = ArgumentCaptor.forClass(Mood.class);
+    settingsController.importMoods(csvFile(csv), authentication, redirectAttributes);
+
+    // Row 1: fully valid. Row 2: unparseable Date, skipped. Row 3: Rating 15 is
+    // out of the 1-10 range, skipped. Row 4: blank Rating is valid (matches how
+    // a mood can be created/exported with no rating at all).
+    verify(moodRepository, times(2)).save(moodCaptor.capture());
+    verify(redirectAttributes)
+        .addFlashAttribute("importMessage", "Imported 2 of 4 row(s) from the CSV.");
+
+    List<Mood> saved = moodCaptor.getAllValues();
+    assertEquals("Happy", saved.get(0).getMood());
+    assertEquals(8, saved.get(0).getMoodRating());
+    assertEquals("Content", saved.get(0).getMoodTag());
+    assertEquals("Great day", saved.get(0).getNotes());
+    assertEquals(testUser, saved.get(0).getUser());
+    assertNotNull(saved.get(0).getWeather());
+    assertEquals(14.5, saved.get(0).getWeather().getTemperatureC());
+    assertEquals(0.2, saved.get(0).getWeather().getPrecipitationMm());
+
+    assertEquals("Fine", saved.get(1).getMood());
+    assertNull(saved.get(1).getMoodRating());
+    assertNull(saved.get(1).getWeather());
+  }
+
+  @Test
+  void testImportMoods_malformedWeatherIsSkippedWithoutFailingTheRow() {
+    when(authentication.getName()).thenReturn(testUsername);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+    String csv =
+        "Date,Mood,Rating,Tag,Notes,TemperatureC,PrecipitationMm\r\n"
+            + "2026-01-15T10:30:00Z,Happy,8,,,not-a-number,0.2\r\n";
+
+    ArgumentCaptor<Mood> moodCaptor = ArgumentCaptor.forClass(Mood.class);
+    settingsController.importMoods(csvFile(csv), authentication, redirectAttributes);
+
+    verify(moodRepository).save(moodCaptor.capture());
+    assertEquals("Happy", moodCaptor.getValue().getMood());
+    assertNull(moodCaptor.getValue().getWeather());
+    verify(redirectAttributes)
+        .addFlashAttribute("importMessage", "Imported 1 of 1 row(s) from the CSV.");
   }
 }

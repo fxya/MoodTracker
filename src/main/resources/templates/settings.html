@@ -111,6 +111,22 @@
             </form>
         </div>
 
+        <div class="mt-8">
+            <h2 class="mb-4 font-display text-lg text-ink">Import Moods</h2>
+
+            <div class="mb-4 rounded-lg border border-success-border bg-success-bg px-4 py-2.5 text-sm text-success" data-testid="alert-success" th:if="${importMessage}" th:text="${importMessage}">Import Message</div>
+            <div class="mb-4 rounded-lg border border-danger-border bg-danger-bg px-4 py-2.5 text-sm text-danger" data-testid="alert-danger" th:if="${importError}" th:text="${importError}">Import Error</div>
+
+            <p class="mb-4 text-sm text-ink-faint">
+                Import mood history from a MoodTracker CSV export - e.g. to restore a backup or migrate from another install. Only this app's own export format is supported.
+            </p>
+            <form th:action="@{/settings/import-moods}" method="post" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3">
+                <input type="file" id="import-file" name="file" accept=".csv,text/csv" required
+                       class="min-w-[200px] flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
+                <button type="submit" class="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink">Import</button>
+            </form>
+        </div>
+
         <h2 class="mt-8 mb-4 font-display text-lg text-ink">Change Password</h2>
 
         <div class="mb-4 rounded-lg border border-success-border bg-success-bg px-4 py-2.5 text-sm text-success" data-testid="alert-success" th:if="${passwordChanged}">Password changed.</div>
