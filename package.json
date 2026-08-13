@@ -8,8 +8,8 @@
     "dev": "vite build --watch",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "format": "prettier --write \"frontend/js/**/*.{js,mjs}\" \"frontend/css/**/*.css\" \"e2e/**/*.js\" \"playwright.config.js\"",
-    "format:check": "prettier --check \"frontend/js/**/*.{js,mjs}\" \"frontend/css/**/*.css\" \"e2e/**/*.js\" \"playwright.config.js\""
+    "format": "prettier --write \"frontend/js/**/*.{js,mjs}\" \"frontend/css/**/*.css\" \"frontend/public/**/*.{js,webmanifest}\" \"e2e/**/*.js\" \"playwright.config.js\"",
+    "format:check": "prettier --check \"frontend/js/**/*.{js,mjs}\" \"frontend/css/**/*.css\" \"frontend/public/**/*.{js,webmanifest}\" \"e2e/**/*.js\" \"playwright.config.js\""
   },
   "dependencies": {
     "chart.js": "^4.5.0"
