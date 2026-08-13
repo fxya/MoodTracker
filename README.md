@@ -48,6 +48,14 @@ every user only ever sees their own data.
   from Settings.
 - Reset a forgotten password via email - see "Forgot password" below.
 
+## Health check
+
+`GET /actuator/health` is reachable without authentication and returns a bare
+`{"status":"UP"}` (or `"DOWN"` if the database is unreachable) - useful for a
+monitoring script, cron job, or container healthcheck against a Pi-hosted
+instance. Nothing else under `/actuator` is exposed - no metrics, env, beans,
+etc. - only the liveness/readiness signal.
+
 ## Forgot password
 
 Set an email address at registration (or later, under Settings) to enable
