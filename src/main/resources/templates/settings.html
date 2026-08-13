@@ -2,6 +2,14 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity6">
 <head>
     <title>Settings</title>
+    <script>
+        (function () {
+            var theme = localStorage.getItem('theme');
+            if (theme === 'light' || theme === 'dark') {
+                document.documentElement.dataset.theme = theme;
+            }
+        })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
     <link rel="manifest" href="/manifest.webmanifest"/>
     <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
@@ -15,6 +23,44 @@
         <div th:replace="~{fragments/header :: backHeader}"></div>
 
         <h1 class="mb-6 font-display text-2xl text-ink">Settings</h1>
+
+        <div class="mb-8 rounded-2xl border border-border-soft bg-surface p-6 shadow-sm">
+            <h2 class="mb-4 font-display text-lg text-ink">Appearance</h2>
+            <div class="flex gap-4 text-sm text-ink">
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="theme" value="system" data-testid="theme-option"/>
+                    System
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="theme" value="light" data-testid="theme-option"/>
+                    Light
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="theme" value="dark" data-testid="theme-option"/>
+                    Dark
+                </label>
+            </div>
+        </div>
+        <script>
+            (function () {
+                var stored = localStorage.getItem('theme') || 'system';
+                var radios = document.querySelectorAll('input[name="theme"]');
+                radios.forEach(function (radio) {
+                    radio.checked = radio.value === stored;
+                    radio.addEventListener('change', function () {
+                        if (!radio.checked) {
+                            return;
+                        }
+                        if (radio.value === 'system') {
+                            localStorage.removeItem('theme');
+                        } else {
+                            localStorage.setItem('theme', radio.value);
+                        }
+                        location.reload();
+                    });
+                });
+            })();
+        </script>
 
         <div class="mb-4 rounded-lg border border-success-border bg-success-bg px-4 py-2.5 text-sm text-success" data-testid="alert-success" th:if="${settingsSaved}">Settings saved.</div>
         <div class="mb-4 rounded-lg border border-danger-border bg-danger-bg px-4 py-2.5 text-sm text-danger" data-testid="alert-danger" th:if="${settingsError}" th:text="${settingsError}">Settings Error</div>
