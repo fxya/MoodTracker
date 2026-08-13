@@ -27,11 +27,13 @@ public interface MoodRepository extends JpaRepository<Mood, Long> {
   // infer a type for the parameter inside LOWER(CONCAT(...)) when it's null, and
   // fails with "function lower(bytea) does not exist".
   @Query(
-      "SELECT m FROM Mood m WHERE m.user = :user "
-          + "AND (:q IS NULL OR LOWER(m.mood) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(m.notes) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%'))) "
-          + "AND (:minRating IS NULL OR m.moodRating >= :minRating) "
-          + "AND (:maxRating IS NULL OR m.moodRating <= :maxRating) "
-          + "ORDER BY m.date DESC")
+      """
+      SELECT m FROM Mood m WHERE m.user = :user
+      AND (:q IS NULL OR LOWER(m.mood) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(m.notes) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')))
+      AND (:minRating IS NULL OR m.moodRating >= :minRating)
+      AND (:maxRating IS NULL OR m.moodRating <= :maxRating)
+      ORDER BY m.date DESC
+      """)
   Page<Mood> search(
       @Param("user") User user,
       @Param("q") String q,

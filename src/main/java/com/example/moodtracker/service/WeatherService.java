@@ -52,7 +52,7 @@ public class WeatherService {
                 return Mono.error(
                     new IllegalStateException("No location found for \"" + location + "\""));
               }
-              return Mono.just(results.get(0));
+              return Mono.just(results.getFirst());
             });
   }
 
