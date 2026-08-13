@@ -4,10 +4,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
+import com.example.moodtracker.model.Mood;
 import com.example.moodtracker.model.User;
+import com.example.moodtracker.model.Weather;
+import com.example.moodtracker.repository.MoodRepository;
 import com.example.moodtracker.repository.UserRepository;
+import com.example.moodtracker.service.WeatherService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +27,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.ui.Model;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import reactor.core.publisher.Mono;
 
 @ExtendWith(MockitoExtension.class)
 public class SettingsControllerTest {
@@ -28,6 +35,10 @@ public class SettingsControllerTest {
   @Mock private UserRepository userRepository;
 
   @Mock private PasswordEncoder passwordEncoder;
+
+  @Mock private MoodRepository moodRepository;
+
+  @Mock private WeatherService weatherService;
 
   @Mock private Authentication authentication;
 
@@ -205,5 +216,113 @@ public class SettingsControllerTest {
     verify(userRepository, never()).delete(any());
     verify(request, never()).getSession();
     verify(redirectAttributes).addFlashAttribute(eq("deleteError"), anyString());
+  }
+
+  @Test
+  void testBackfillWeather_noLocationSet_returnsErrorWithoutQuerying() {
+    when(authentication.getName()).thenReturn(testUsername);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+    String viewName = settingsController.backfillWeather(authentication, redirectAttributes);
+
+    assertEquals("redirect:/settings", viewName);
+    verify(moodRepository, never()).findByUserAndWeatherIsNull(any());
+    verify(redirectAttributes).addFlashAttribute(eq("backfillError"), anyString());
+  }
+
+  @Test
+  void testBackfillWeather_noMoodsMissingWeather_returnsMessageWithoutValidating() {
+    testUser.setLocation("London");
+    when(authentication.getName()).thenReturn(testUsername);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+    when(moodRepository.findByUserAndWeatherIsNull(testUser)).thenReturn(List.of());
+
+    String viewName = settingsController.backfillWeather(authentication, redirectAttributes);
+
+    assertEquals("redirect:/settings", viewName);
+    verify(weatherService, never()).validateLocation(any());
+    verify(redirectAttributes)
+        .addFlashAttribute("backfillMessage", "No moods are missing weather.");
+  }
+
+  @Test
+  void testBackfillWeather_invalidLocation_failsFastWithoutFetchingPerMood() {
+    testUser.setLocation("Nowhereville");
+    when(authentication.getName()).thenReturn(testUsername);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+    Mood mood = new Mood();
+    mood.setId(1L);
+    mood.setDate(Instant.parse("2026-01-15T10:30:00Z"));
+    when(moodRepository.findByUserAndWeatherIsNull(testUser)).thenReturn(List.of(mood));
+    when(weatherService.validateLocation("Nowhereville"))
+        .thenReturn(Mono.error(new IllegalStateException("No location found")));
+
+    String viewName = settingsController.backfillWeather(authentication, redirectAttributes);
+
+    assertEquals("redirect:/settings", viewName);
+    verify(weatherService, never()).fetchHistoricalWeather(any(), any());
+    verify(moodRepository, never()).save(any());
+    verify(redirectAttributes).addFlashAttribute(eq("backfillError"), anyString());
+  }
+
+  @Test
+  void testBackfillWeather_savesWeatherForEachMoodMissingIt() {
+    testUser.setLocation("London");
+    when(authentication.getName()).thenReturn(testUsername);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+    Mood mood1 = new Mood();
+    mood1.setId(1L);
+    mood1.setDate(Instant.parse("2026-01-15T10:30:00Z"));
+    Mood mood2 = new Mood();
+    mood2.setId(2L);
+    mood2.setDate(Instant.parse("2026-01-16T10:30:00Z"));
+    when(moodRepository.findByUserAndWeatherIsNull(testUser)).thenReturn(List.of(mood1, mood2));
+    when(weatherService.validateLocation("London")).thenReturn(Mono.empty());
+
+    Weather weather = new Weather();
+    weather.setTemperatureC(9.5);
+    weather.setPrecipitationMm(1.0);
+    when(weatherService.fetchHistoricalWeather(eq("London"), any())).thenReturn(Mono.just(weather));
+
+    String viewName = settingsController.backfillWeather(authentication, redirectAttributes);
+
+    assertEquals("redirect:/settings", viewName);
+    assertEquals(weather, mood1.getWeather());
+    assertEquals(weather, mood2.getWeather());
+    verify(moodRepository, times(2)).save(any());
+    verify(redirectAttributes)
+        .addFlashAttribute("backfillMessage", "Backfilled weather for 2 of 2 mood(s).");
+  }
+
+  @Test
+  void testBackfillWeather_perMoodFailureIsSkippedNotFatal() {
+    testUser.setLocation("London");
+    when(authentication.getName()).thenReturn(testUsername);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+    Mood mood1 = new Mood();
+    mood1.setId(1L);
+    mood1.setDate(Instant.parse("2026-01-15T10:30:00Z"));
+    Mood mood2 = new Mood();
+    mood2.setId(2L);
+    mood2.setDate(Instant.parse("2026-01-16T10:30:00Z"));
+    when(moodRepository.findByUserAndWeatherIsNull(testUser)).thenReturn(List.of(mood1, mood2));
+    when(weatherService.validateLocation("London")).thenReturn(Mono.empty());
+
+    Weather weather = new Weather();
+    weather.setTemperatureC(9.5);
+    when(weatherService.fetchHistoricalWeather(eq("London"), any()))
+        .thenReturn(Mono.error(new IllegalStateException("No historical weather available")))
+        .thenReturn(Mono.just(weather));
+
+    String viewName = settingsController.backfillWeather(authentication, redirectAttributes);
+
+    assertEquals("redirect:/settings", viewName);
+    assertNull(mood1.getWeather());
+    assertEquals(weather, mood2.getWeather());
+    verify(moodRepository, times(1)).save(any());
+    verify(redirectAttributes)
+        .addFlashAttribute("backfillMessage", "Backfilled weather for 1 of 2 mood(s).");
   }
 }

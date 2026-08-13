@@ -23,11 +23,20 @@ every user only ever sees their own data.
 - Weather is shown inline on each mood entry.
 - If weather lookup fails or no location is set, the mood still saves -
   weather is a bonus, never a blocker.
+- Geocoded coordinates for a location are cached for a week, so logging
+  moods doesn't re-geocode the same place every time.
+- Backfill weather for moods logged before you set a location, from
+  Settings - it looks up each missing day's historical conditions for
+  your current location.
 
 **Trends** (on the `/moods` page)
 - Mood rating over time.
 - Temperature and precipitation over time.
 - Average mood on dry days vs. rainy days.
+
+**Export**
+- Download your full mood history as CSV or JSON from the mood tracker
+  page.
 
 **Account**
 - Register and log in; all data is scoped to your own account.

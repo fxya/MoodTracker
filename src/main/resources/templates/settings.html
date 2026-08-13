@@ -36,6 +36,20 @@
             <button type="submit" class="btn btn-primary">Save Settings</button>
         </form>
 
+        <div th:if="${location != null and !#strings.isEmpty(location)}">
+            <h2>Backfill Weather</h2>
+
+            <div class="alert alert-success" th:if="${backfillMessage}" th:text="${backfillMessage}">Backfill Message</div>
+            <div class="alert alert-danger" th:if="${backfillError}" th:text="${backfillError}">Backfill Error</div>
+
+            <p class="hero-tagline">
+                Fill in weather for moods you logged before setting a location, using your current location.
+            </p>
+            <form th:action="@{/settings/backfill-weather}" method="post">
+                <button type="submit" class="btn btn-secondary">Backfill Weather</button>
+            </form>
+        </div>
+
         <h2>Change Password</h2>
 
         <div class="alert alert-success" th:if="${passwordChanged}">Password changed.</div>

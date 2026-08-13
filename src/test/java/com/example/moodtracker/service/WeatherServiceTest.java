@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.example.moodtracker.model.Weather;
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -174,5 +175,74 @@ class WeatherServiceTest {
     weatherService.fetchWeather("Paris").block();
 
     verify(responseSpec, times(2)).bodyToMono(WeatherService.GeocodingResponse.class);
+  }
+
+  @Test
+  void fetchHistoricalWeather_ShouldReturnDailyAggregate_WhenBothApiCallsSucceed() {
+    mockGeocodingResult(51.52, -0.11);
+    WeatherService.ArchiveResponse archiveResponse =
+        new WeatherService.ArchiveResponse(
+            new WeatherService.DailyConditions(List.of(9.5), List.of(3.2)));
+    when(responseSpec.bodyToMono(WeatherService.ArchiveResponse.class))
+        .thenReturn(Mono.just(archiveResponse));
+
+    Weather result =
+        weatherService.fetchHistoricalWeather("London", LocalDate.of(2026, 1, 15)).block();
+
+    assertNotNull(result);
+    assertEquals(9.5, result.getTemperatureC());
+    assertEquals(3.2, result.getPrecipitationMm());
+  }
+
+  @Test
+  void fetchHistoricalWeather_ShouldError_WhenNoDailyDataReturned() {
+    mockGeocodingResult(51.52, -0.11);
+    WeatherService.ArchiveResponse emptyResponse =
+        new WeatherService.ArchiveResponse(
+            new WeatherService.DailyConditions(List.of(), List.of()));
+    when(responseSpec.bodyToMono(WeatherService.ArchiveResponse.class))
+        .thenReturn(Mono.just(emptyResponse));
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> weatherService.fetchHistoricalWeather("London", LocalDate.of(2026, 1, 15)).block());
+  }
+
+  @Test
+  void fetchHistoricalWeather_ShouldError_WhenLocationHasNoGeocodingResults() {
+    WeatherService.GeocodingResponse emptyResponse =
+        new WeatherService.GeocodingResponse(List.of());
+    when(responseSpec.bodyToMono(WeatherService.GeocodingResponse.class))
+        .thenReturn(Mono.just(emptyResponse));
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            weatherService
+                .fetchHistoricalWeather("Nowhereville", LocalDate.of(2026, 1, 15))
+                .block());
+  }
+
+  @Test
+  void fetchHistoricalWeather_ReusesTheGeocodeCacheSharedWithFetchWeather() {
+    mockGeocodingResult(51.52, -0.11);
+    when(responseSpec.bodyToMono(WeatherService.ForecastResponse.class))
+        .thenReturn(
+            Mono.just(
+                new WeatherService.ForecastResponse(
+                    new WeatherService.CurrentConditions(13.0, 0.4))));
+    when(responseSpec.bodyToMono(WeatherService.ArchiveResponse.class))
+        .thenReturn(
+            Mono.just(
+                new WeatherService.ArchiveResponse(
+                    new WeatherService.DailyConditions(List.of(9.5), List.of(3.2)))));
+
+    weatherService.fetchWeather("London").block();
+    weatherService.fetchHistoricalWeather("London", LocalDate.of(2026, 1, 15)).block();
+
+    // The backfill flow geocodes once per user, then makes one historical-weather
+    // call per mood - the whole point of sharing the cache is that only the first
+    // of those calls (here, the earlier fetchWeather) should hit the geocoding API.
+    verify(responseSpec, times(1)).bodyToMono(WeatherService.GeocodingResponse.class);
   }
 }

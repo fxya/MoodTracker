@@ -21,6 +21,10 @@ public interface MoodRepository extends JpaRepository<Mood, Long> {
   // just to compare the last two weeks.
   List<Mood> findByUserAndDateAfterOrderByDateDesc(User user, Instant since);
 
+  // Moods logged before the user set a location (or where weather lookup failed at
+  // the time) - the backfill-weather feature's candidate set.
+  List<Mood> findByUserAndWeatherIsNull(User user);
+
   // Each filter is optional (a null parameter matches everything) so the mood
   // history page can search/filter/paginate with a single query.
   // :q is explicitly CAST to string - without it, PostgreSQL's JDBC driver can't
