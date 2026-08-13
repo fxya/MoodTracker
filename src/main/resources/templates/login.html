@@ -22,16 +22,20 @@
             <div th:if="${registrationSuccess}" class="mb-4 rounded-lg border border-success-border bg-success-bg px-4 py-2.5 text-sm text-success" data-testid="alert-success" th:text="${registrationSuccess}">
                 Registration successful! Please login.
             </div>
+            <div th:if="${resetSuccess}" class="mb-4 rounded-lg border border-success-border bg-success-bg px-4 py-2.5 text-sm text-success" data-testid="alert-success" th:text="${resetSuccess}">
+                Your password has been reset. Please log in.
+            </div>
             <div class="mb-4">
                 <label for="username" class="mb-1.5 block text-xs font-semibold text-ink-muted">Username:</label>
                 <input type="text" id="username" name="username" required autofocus
                        class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
             </div>
-            <div class="mb-5">
+            <div class="mb-2">
                 <label for="password" class="mb-1.5 block text-xs font-semibold text-ink-muted">Password:</label>
                 <input type="password" id="password" name="password" required
                        class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
             </div>
+            <p class="mb-5 text-right text-sm"><a class="font-semibold text-accent hover:text-accent-deep" th:href="@{/forgot-password}">Forgot your password?</a></p>
             <div>
                 <button type="submit" class="w-full rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-deep">Log in</button>
             </div>

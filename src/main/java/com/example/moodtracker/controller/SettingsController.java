@@ -7,10 +7,13 @@ import com.example.moodtracker.repository.MoodRepository;
 import com.example.moodtracker.repository.UserRepository;
 import com.example.moodtracker.service.WeatherService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -35,21 +38,25 @@ public class SettingsController {
   private final PasswordEncoder passwordEncoder;
   private final MoodRepository moodRepository;
   private final WeatherService weatherService;
+  private final Validator validator;
 
   public SettingsController(
       UserRepository userRepository,
       PasswordEncoder passwordEncoder,
       MoodRepository moodRepository,
-      WeatherService weatherService) {
+      WeatherService weatherService,
+      Validator validator) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.moodRepository = moodRepository;
     this.weatherService = weatherService;
+    this.validator = validator;
   }
 
   @GetMapping
   public String showSettings(Model model, Authentication authentication) {
     User user = currentUser(authentication);
+    model.addAttribute("email", user.getEmail());
     model.addAttribute("location", user.getLocation());
     model.addAttribute("timeZone", user.getTimeZone());
     model.addAttribute("availableTimeZones", sortedTimeZoneIds());
@@ -59,11 +66,36 @@ public class SettingsController {
 
   @PostMapping
   public String updateSettings(
+      @RequestParam(value = "email", required = false) String email,
       @RequestParam(value = "location", required = false) String location,
       @RequestParam(value = "timeZone", required = false) String timeZone,
       Authentication authentication,
       RedirectAttributes redirectAttributes) {
     User user = currentUser(authentication);
+
+    String trimmedEmail = email == null || email.isBlank() ? null : email.trim();
+    if (trimmedEmail != null) {
+      Set<ConstraintViolation<User>> violations =
+          validator.validateValue(
+              User.class, "email", trimmedEmail, User.RegistrationValidation.class);
+      if (!violations.isEmpty()) {
+        redirectAttributes.addFlashAttribute(
+            "settingsError", violations.iterator().next().getMessage());
+        return "redirect:/settings";
+      }
+      boolean emailTakenByAnotherUser =
+          userRepository
+              .findByEmail(trimmedEmail)
+              .map(existing -> !existing.getId().equals(user.getId()))
+              .orElse(false);
+      if (emailTakenByAnotherUser) {
+        redirectAttributes.addFlashAttribute(
+            "settingsError", "That email is already in use by another account.");
+        return "redirect:/settings";
+      }
+    }
+    user.setEmail(trimmedEmail);
+
     user.setLocation(location == null || location.isBlank() ? null : location.trim());
 
     // A blank selection means "use the server's default zone" (the previous,

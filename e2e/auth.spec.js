@@ -8,6 +8,7 @@ test('register redirects to login with a success message, then login lands on th
 
     await page.goto('/register');
     await page.fill('#username', username);
+    await page.fill('#email', `${username}@example.com`);
     await page.fill('#password', TEST_PASSWORD);
     await page.click('button:has-text("Register")');
 

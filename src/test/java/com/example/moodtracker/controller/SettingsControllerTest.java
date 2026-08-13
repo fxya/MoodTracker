@@ -12,9 +12,12 @@ import com.example.moodtracker.repository.UserRepository;
 import com.example.moodtracker.service.WeatherService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +42,8 @@ public class SettingsControllerTest {
   @Mock private MoodRepository moodRepository;
 
   @Mock private WeatherService weatherService;
+
+  @Mock private Validator validator;
 
   @Mock private Authentication authentication;
 
@@ -81,7 +86,7 @@ public class SettingsControllerTest {
 
     String viewName =
         settingsController.updateSettings(
-            "London", "Europe/London", authentication, redirectAttributes);
+            null, "London", "Europe/London", authentication, redirectAttributes);
 
     assertEquals("redirect:/settings", viewName);
     ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
@@ -97,7 +102,7 @@ public class SettingsControllerTest {
     when(authentication.getName()).thenReturn(testUsername);
     when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
 
-    settingsController.updateSettings("London", "  ", authentication, redirectAttributes);
+    settingsController.updateSettings(null, "London", "  ", authentication, redirectAttributes);
 
     ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
     verify(userRepository).save(userCaptor.capture());
@@ -111,11 +116,98 @@ public class SettingsControllerTest {
 
     String viewName =
         settingsController.updateSettings(
-            "London", "Not/AZone", authentication, redirectAttributes);
+            null, "London", "Not/AZone", authentication, redirectAttributes);
 
     assertEquals("redirect:/settings", viewName);
     verify(userRepository, never()).save(any());
     verify(redirectAttributes).addFlashAttribute(eq("settingsError"), anyString());
+  }
+
+  @Test
+  void testUpdateSettings_savesValidEmail() {
+    when(authentication.getName()).thenReturn(testUsername);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+    when(validator.validateValue(
+            eq(User.class),
+            eq("email"),
+            eq("new@example.com"),
+            eq(User.RegistrationValidation.class)))
+        .thenReturn(Set.of());
+    when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
+
+    String viewName =
+        settingsController.updateSettings(
+            "new@example.com", null, null, authentication, redirectAttributes);
+
+    assertEquals("redirect:/settings", viewName);
+    ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+    verify(userRepository).save(userCaptor.capture());
+    assertEquals("new@example.com", userCaptor.getValue().getEmail());
+    verify(redirectAttributes).addFlashAttribute("settingsSaved", true);
+  }
+
+  @Test
+  void testUpdateSettings_invalidEmailFormat_doesNotSave() {
+    when(authentication.getName()).thenReturn(testUsername);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+    ConstraintViolation<User> violation = mock(ConstraintViolation.class);
+    when(violation.getMessage()).thenReturn("Enter a valid email address.");
+    when(validator.validateValue(
+            eq(User.class), eq("email"), eq("not-an-email"), eq(User.RegistrationValidation.class)))
+        .thenReturn(Set.of(violation));
+
+    String viewName =
+        settingsController.updateSettings(
+            "not-an-email", null, null, authentication, redirectAttributes);
+
+    assertEquals("redirect:/settings", viewName);
+    verify(userRepository, never()).save(any());
+    verify(redirectAttributes).addFlashAttribute("settingsError", "Enter a valid email address.");
+  }
+
+  @Test
+  void testUpdateSettings_emailAlreadyUsedByAnotherAccount_doesNotSave() {
+    when(authentication.getName()).thenReturn(testUsername);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+    when(validator.validateValue(
+            eq(User.class),
+            eq("email"),
+            eq("taken@example.com"),
+            eq(User.RegistrationValidation.class)))
+        .thenReturn(Set.of());
+    User otherUser = new User();
+    otherUser.setId(2L);
+    when(userRepository.findByEmail("taken@example.com")).thenReturn(Optional.of(otherUser));
+
+    String viewName =
+        settingsController.updateSettings(
+            "taken@example.com", null, null, authentication, redirectAttributes);
+
+    assertEquals("redirect:/settings", viewName);
+    verify(userRepository, never()).save(any());
+    verify(redirectAttributes).addFlashAttribute(eq("settingsError"), anyString());
+  }
+
+  @Test
+  void testUpdateSettings_emailUnchangedForSameAccount_saves() {
+    testUser.setEmail("mine@example.com");
+    when(authentication.getName()).thenReturn(testUsername);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+    when(validator.validateValue(
+            eq(User.class),
+            eq("email"),
+            eq("mine@example.com"),
+            eq(User.RegistrationValidation.class)))
+        .thenReturn(Set.of());
+    when(userRepository.findByEmail("mine@example.com")).thenReturn(Optional.of(testUser));
+
+    String viewName =
+        settingsController.updateSettings(
+            "mine@example.com", null, null, authentication, redirectAttributes);
+
+    assertEquals("redirect:/settings", viewName);
+    verify(userRepository).save(testUser);
+    verify(redirectAttributes).addFlashAttribute("settingsSaved", true);
   }
 
   @Test

@@ -2,11 +2,11 @@ package com.example.moodtracker.controller;
 
 import com.example.moodtracker.model.User;
 import com.example.moodtracker.repository.UserRepository;
-import jakarta.validation.Valid; // For basic validation if you add annotations to User
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,11 +33,11 @@ public class UserController {
 
   @PostMapping("/register")
   public String registerUser(
-      @Valid @ModelAttribute("user") User user,
+      @Validated(User.RegistrationValidation.class) @ModelAttribute("user") User user,
       BindingResult bindingResult,
       RedirectAttributes redirectAttributes) {
     if (bindingResult.hasErrors()) {
-      // If validation errors (e.g. @NotNull on User fields), return to form
+      // If validation errors (e.g. @NotBlank/@Email on the email field), return to form
       redirectAttributes.addFlashAttribute(
           "org.springframework.validation.BindingResult.user", bindingResult);
       redirectAttributes.addFlashAttribute("user", user);
@@ -52,6 +52,16 @@ public class UserController {
           "org.springframework.validation.BindingResult.user", bindingResult);
       redirectAttributes.addFlashAttribute("user", user);
       return "redirect:/register"; // Redirect back to show the error
+    }
+
+    // Check if email already exists
+    if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+      bindingResult.rejectValue(
+          "email", "user.email.exists", "Email already in use. Please use another.");
+      redirectAttributes.addFlashAttribute(
+          "org.springframework.validation.BindingResult.user", bindingResult);
+      redirectAttributes.addFlashAttribute("user", user);
+      return "redirect:/register";
     }
 
     user.setPassword(passwordEncoder.encode(user.getPassword()));

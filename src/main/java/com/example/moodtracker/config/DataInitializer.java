@@ -30,6 +30,7 @@ public class DataInitializer implements CommandLineRunner {
       User testUser = new User();
       testUser.setUsername("testuser");
       testUser.setPassword(passwordEncoder.encode("password"));
+      testUser.setEmail("testuser@example.com");
       // Set roles if you have a role field in User entity e.g. testUser.setRole("ROLE_USER");
       userRepository.save(testUser);
       System.out.println("Created test user: testuser/password");

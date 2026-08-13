@@ -46,6 +46,31 @@ every user only ever sees their own data.
   your own zone instead of the server's.
 - Change your password or delete your account (and everything in it)
   from Settings.
+- Reset a forgotten password via email - see "Forgot password" below.
+
+## Forgot password
+
+Set an email address at registration (or later, under Settings) to enable
+"Forgot your password?" on the login page. It emails a link, valid for 30
+minutes, to set a new password.
+
+This needs an SMTP relay to actually deliver mail - set these environment
+variables when running somewhere real (e.g. with a Gmail app password, or
+any other SMTP provider):
+```bash
+MAIL_HOST=smtp.example.com
+MAIL_PORT=587
+MAIL_USERNAME=your-smtp-username
+MAIL_PASSWORD=your-smtp-password
+MAIL_FROM=no-reply@yourdomain.com
+```
+With none of these set, the app still starts and the "Forgot your password?"
+form still "succeeds" from the UI's point of view - by design, the request
+always shows the same generic message regardless of whether an account was
+found or an email was actually sent, to avoid leaking which usernames exist.
+That means it's easy to forget SMTP isn't configured; check the server logs
+for a "Failed to send password reset email" warning if a reset link never
+arrives.
 
 ## Technology
 
@@ -106,11 +131,11 @@ other than `dev`, in addition to overriding the database credentials above.
 
 ### Login/registration rate limiting
 
-`POST /login` and `POST /register` are rate-limited per client IP (20
-attempts per 5-minute window, in-memory, reset on restart) to blunt naive
-automated credential-stuffing and account-enumeration attempts. It's a
-single-instance, best-effort deterrent, not a replacement for a proper
-WAF/gateway-level defense in a real deployment.
+`POST /login`, `POST /register`, and `POST /forgot-password` are rate-limited
+per client IP (20 attempts per 5-minute window, in-memory, reset on restart)
+to blunt naive automated credential-stuffing and account-enumeration
+attempts. It's a single-instance, best-effort deterrent, not a replacement
+for a proper WAF/gateway-level defense in a real deployment.
 
 ### Frontend build
 
@@ -166,6 +191,10 @@ make the suite flaky and non-deterministic. That logic is already covered by
 `WeatherServiceTest`/`SettingsControllerTest` with a mocked `WebClient`; e2e
 tests simply never set a location, which is itself a real (if implicit)
 check of the app's designed-in "weather is optional" degradation path.
+Likewise, `forgot-password.spec.js` only covers the request form and an
+invalid-token link - there's no way for Playwright to read a real email, so
+the token-based reset itself is covered by `PasswordResetControllerTest`
+instead.
 
 Several tests in `e2e/mood-crud.spec.js` share one logged-in session across
 tests (`test.describe.configure({ mode: 'serial' })`) rather than
@@ -206,13 +235,20 @@ formatter risks mangling `th:*` attribute syntax.
    ```bash
    docker build -t moodtracker-app .
    ```
-3. Run the container, pointing it at a reachable PostgreSQL instance:
+3. Run the container, pointing it at a reachable PostgreSQL instance. Add the
+   `MAIL_*` variables too (see "Forgot password" above) if you want password
+   resets to actually deliver mail - they're optional, the app runs fine
+   without them:
    ```bash
    docker run -p 8080:8080 --name moodtracker \
      -e DB_URL=jdbc:postgresql://<host>:5432/moodtracker \
      -e DB_USERNAME=<username> \
      -e DB_PASSWORD=<password> \
      -e SPRING_PROFILES_ACTIVE=prod \
+     -e MAIL_HOST=<smtp-host> \
+     -e MAIL_USERNAME=<smtp-username> \
+     -e MAIL_PASSWORD=<smtp-password> \
+     -e MAIL_FROM=<from-address> \
      moodtracker-app
    ```
 
