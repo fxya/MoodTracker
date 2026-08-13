@@ -1,15 +1,23 @@
 {
   "name": "moodtracker-frontend-tooling",
   "private": true,
-  "type": "commonjs",
-  "description": "JS unit tests (src/main/resources/static/js) and Prettier formatting for JS/CSS. Not part of the Gradle build or the app runtime - the app itself ships plain <script>/<link> tags with no bundler.",
+  "type": "module",
+  "description": "Frontend build tooling: Vite compiles frontend/css (Tailwind CSS v4) and frontend/js into src/main/resources/static, Vitest covers the pure JS logic in frontend/js, and Prettier formats frontend/js and frontend/css. Wired into the Gradle build via the node-gradle plugin - see build.gradle.",
   "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
     "test": "vitest run",
-    "format": "prettier --write \"src/main/resources/static/js/**/*.{js,mjs}\" \"src/main/resources/static/css/**/*.css\"",
-    "format:check": "prettier --check \"src/main/resources/static/js/**/*.{js,mjs}\" \"src/main/resources/static/css/**/*.css\""
+    "format": "prettier --write \"frontend/js/**/*.{js,mjs}\" \"frontend/css/**/*.css\"",
+    "format:check": "prettier --check \"frontend/js/**/*.{js,mjs}\" \"frontend/css/**/*.css\""
+  },
+  "dependencies": {
+    "chart.js": "^4.5.0"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
     "prettier": "^3.0.0",
+    "tailwindcss": "^4.0.0",
+    "vite": "^6.0.0",
     "vitest": "^3.0.0"
   }
 }
