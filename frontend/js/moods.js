@@ -26,8 +26,47 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 });
 
+// Chart.js draws to a canvas, which is opaque to screen readers - this
+// builds a visually-hidden (sr-only) table alongside each chart from the
+// same {labels, values} data already computed for it, so the information
+// isn't chart-only.
+function buildDataTable(caption, headers, rows) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'sr-only';
+
+    const table = document.createElement('table');
+    const captionEl = document.createElement('caption');
+    captionEl.textContent = caption;
+    table.appendChild(captionEl);
+
+    const headRow = document.createElement('tr');
+    headers.forEach((header) => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        headRow.appendChild(th);
+    });
+    const thead = document.createElement('thead');
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    rows.forEach((row) => {
+        const tr = document.createElement('tr');
+        row.forEach((cell) => {
+            const td = document.createElement('td');
+            td.textContent = cell;
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+
+    wrapper.appendChild(table);
+    return wrapper;
+}
+
 function renderTable(data) {
-    const tableBody = document.querySelector('tbody');
+    const tableBody = document.querySelector('#allMoodsTable tbody');
     data.forEach((mood) => {
         const row = document.createElement('tr');
         row.className = 'border-b border-border-soft last:border-0';
@@ -58,6 +97,15 @@ function renderLineChart(canvasId, labels, values, { color, fillColor, label, su
     if (!canvas) {
         return;
     }
+    canvas.setAttribute('aria-label', `${label} over time - see table below for data`);
+    canvas.insertAdjacentElement(
+        'afterend',
+        buildDataTable(
+            `${label} over time`,
+            ['Date', label],
+            labels.map((dateLabel, index) => [dateLabel, values[index]]),
+        ),
+    );
     new Chart(canvas.getContext('2d'), {
         type: 'line',
         data: {
@@ -167,6 +215,15 @@ function renderCorrelationChart(data) {
 
     section.style.display = '';
     caption.textContent = buckets.map((bucket) => `${bucket.label}: n=${bucket.count}`).join(' · ');
+    canvas.setAttribute('aria-label', 'Average mood rating by weather - see table below for data');
+    canvas.insertAdjacentElement(
+        'afterend',
+        buildDataTable(
+            'Average mood rating by weather',
+            ['Weather', 'Average Mood Rating', 'Entries'],
+            buckets.map((bucket) => [bucket.label, bucket.average, bucket.count]),
+        ),
+    );
 
     new Chart(canvas.getContext('2d'), {
         type: 'bar',
