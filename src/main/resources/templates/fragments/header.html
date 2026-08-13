@@ -13,11 +13,13 @@
         </div>
     </div>
 
-    <!-- For pages one level below the mood tracker (settings, mood-edit) -->
+    <!-- For pages one level below the mood tracker (settings, mood-edit, moods) -->
     <div th:fragment="backHeader" class="mb-8 flex flex-wrap items-baseline justify-between gap-3 border-b border-border-soft pb-5">
         <span class="text-sm text-ink-faint italic">Signed in as <strong class="font-semibold not-italic text-ink-muted" sec:authentication="name">User</strong></span>
         <div class="flex items-center gap-4 text-sm">
             <a class="text-ink-muted hover:text-ink transition-colors" th:href="@{/moodtracker}">Back to Mood Tracker</a>
+            <a class="text-ink-muted hover:text-ink transition-colors" th:href="@{/moods}">Trends</a>
+            <a class="text-ink-muted hover:text-ink transition-colors" th:href="@{/settings}">Settings</a>
             <form th:action="@{/logout}" method="post" class="inline">
                 <button type="submit" class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-semibold text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink">Logout</button>
             </form>
