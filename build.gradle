@@ -81,6 +81,12 @@ tasks.register('npmBuild', NpmTask) {
     args = ['run', 'build']
     inputs.files('package.json', 'package-lock.json')
     inputs.dir('frontend')
+    // Tailwind v4's automatic content detection scans the whole project for
+    // utility class usage, including these Thymeleaf templates - without this,
+    // Gradle's up-to-date check sees no declared-input change on a template-only
+    // edit and skips rebuilding, silently leaving a newly-introduced class (one
+    // not already used anywhere under frontend/) missing from the compiled CSS.
+    inputs.dir('src/main/resources/templates')
     outputs.dir('src/main/resources/static/css')
     outputs.dir('src/main/resources/static/js')
     outputs.file('src/main/resources/static/manifest.webmanifest')

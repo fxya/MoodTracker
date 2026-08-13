@@ -5,9 +5,15 @@ export const TEST_PASSWORD = 'TestPass123!';
 
 let counter = 0;
 
+// Each Playwright worker is a separate Node process with its own independent
+// `counter` starting at 0 - two workers calling this in the same millisecond
+// on their first call each produce the same Date.now()+counter pair, causing
+// a duplicate-username DB error that surfaces as a flaky, unrelated-looking
+// test failure. process.pid differs per worker, so including it makes this
+// collision-proof.
 export function uniqueUsername() {
     counter += 1;
-    return `e2e_${Date.now()}_${counter}`;
+    return `e2e_${process.pid}_${Date.now()}_${counter}`;
 }
 
 export async function registerAndLogin(
