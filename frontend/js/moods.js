@@ -1,7 +1,10 @@
 // Fetch all moods from the API client-side and render the mood table plus
 // the mood/temperature/precipitation trend charts. Pure data transforms
 // (buildSeries, computeMoodByWeatherBuckets, date formatting) live in
-// mood-analysis.js, loaded before this file.
+// mood-analysis.js.
+import Chart from 'chart.js/auto';
+import { formatDateTime, buildSeries, computeMoodByWeatherBuckets } from './mood-analysis.js';
+
 document.addEventListener('DOMContentLoaded', function () {
     fetch('/api/moods')
         .then((response) => response.json())

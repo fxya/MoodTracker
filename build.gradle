@@ -3,7 +3,10 @@ plugins {
     id 'org.springframework.boot' version '4.1.0'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.diffplug.spotless' version '7.0.2'
+    id 'com.github.node-gradle.node' version '7.1.0'
 }
+
+import com.github.gradle.node.npm.task.NpmTask
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
@@ -54,4 +57,34 @@ spotless {
         googleJavaFormat()
         target 'src/**/*.java'
     }
+}
+
+// Compiles frontend/ (Tailwind CSS + JS, see package.json/vite.config.js) into
+// src/main/resources/static, so `bootJar`/`bootRun`/`test`/`build` always run
+// against fresh frontend output without a separate manual `npm run build` step.
+node {
+    version = '22.11.0'
+    download = true // no host Node install required, matching how ./gradlew self-bootstraps Gradle
+    npmInstallCommand = 'ci'
+}
+
+tasks.register('npmBuild', NpmTask) {
+    dependsOn tasks.named('npmInstall')
+    args = ['run', 'build']
+    inputs.files('package.json', 'package-lock.json')
+    inputs.dir('frontend')
+    outputs.dir('src/main/resources/static/css')
+    outputs.dir('src/main/resources/static/js')
+}
+
+tasks.named('processResources') {
+    dependsOn tasks.named('npmBuild')
+}
+
+// Spotless scans the whole src/**/*.java glob for its Java target, which
+// overlaps directory-wise with npmBuild's output under src/main/resources/
+// static - no real dependency between them, just an ordering hint so Gradle
+// doesn't flag it as an implicit/undeclared one.
+tasks.matching { it.name.startsWith('spotless') }.configureEach {
+    mustRunAfter tasks.named('npmBuild')
 }

@@ -1,3 +1,19 @@
+/* Tailwind v4, with Preflight (its base reset) intentionally left out: this
+   phase only wires up the build pipeline, and the hand-written reset/base
+   rules below must keep producing pixel-identical output. Importing the
+   layers individually (rather than the usual `@import "tailwindcss";`) is
+   how Preflight gets skipped - there's no v3-style `corePlugins` option in
+   v4's CSS-first config. */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* Everything below is ported verbatim from the previous hand-written
+   src/main/resources/static/css/style.css - unlayered, on purpose, so the
+   cascade behaves exactly as it did before Tailwind was introduced. None of
+   it is expressed as Tailwind utilities/@theme yet; that's deferred to the
+   future visual-redesign pass. */
+
 /* ==========================================================================
    Design tokens
    ========================================================================== */

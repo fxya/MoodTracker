@@ -52,7 +52,9 @@ every user only ever sees their own data.
 - Spring Data JPA / Hibernate
 - Thymeleaf
 - PostgreSQL
-- Chart.js (vendored locally, no CDN dependency)
+- Tailwind CSS v4 + Vite (compiles `frontend/` into `src/main/resources/static`,
+  wired into the Gradle build - see "Frontend build" below)
+- Chart.js (an npm dependency bundled by Vite, not a CDN script)
 - Open-Meteo for weather data
 - Gradle
 - Docker
@@ -108,6 +110,21 @@ automated credential-stuffing and account-enumeration attempts. It's a
 single-instance, best-effort deterrent, not a replacement for a proper
 WAF/gateway-level defense in a real deployment.
 
+### Frontend build
+
+`src/main/resources/static/css/style.css` and `.../static/js/moods.js` are
+**generated** - don't hand-edit them, edit their source under `frontend/`
+instead (`frontend/css/app.css`, `frontend/js/`). The
+[com.github.node-gradle.node](https://github.com/node-gradle/gradle-node-plugin)
+plugin runs `npm run build` (Vite, with Tailwind CSS v4 via
+`@tailwindcss/vite`) automatically before `processResources`, so
+`./gradlew bootRun`/`build`/`test` always compile fresh frontend output with
+no separate manual step - and no host Node install, since the plugin
+downloads a pinned Node version into `.gradle/nodejs` the first time it's
+needed. For iterating on frontend code alongside `bootRun`, `npm run dev`
+(`vite build --watch`) pairs with Spring Boot DevTools' existing LiveReload,
+which already watches `static/**` for changes.
+
 ## Running tests
 
 ```bash
@@ -119,9 +136,8 @@ is running and configured as described above before running tests.
 `WeatherServiceTest` mocks the HTTP calls to Open-Meteo, so no network access
 is needed for that part.
 
-The pure JS logic behind the `/moods` charts (`mood-analysis.js`: series
-building, dry/rainy bucketing) has its own small Vitest suite, separate from
-the Gradle build and not part of the app runtime:
+The pure JS logic behind the `/moods` charts (`frontend/js/mood-analysis.js`:
+series building, dry/rainy bucketing) has its own small Vitest suite:
 ```bash
 npm install
 npm test
@@ -137,9 +153,9 @@ enforced via [Spotless](https://github.com/diffplug/spotless) with
 ./gradlew spotlessApply   # reformats in place
 ```
 
-JS/CSS are formatted with [Prettier](https://prettier.io/) (config in
-`.prettierrc.json`; kept single-quote and 4-space to match the existing code
-rather than Prettier's bare defaults):
+JS/CSS under `frontend/` are formatted with [Prettier](https://prettier.io/)
+(config in `.prettierrc.json`; kept single-quote and 4-space to match the
+existing code rather than Prettier's bare defaults):
 ```bash
 npm run format:check
 npm run format
@@ -149,11 +165,14 @@ formatter risks mangling `th:*` attribute syntax.
 
 ## Docker
 
-1. Build the application JAR:
+1. Build the application JAR (this now also runs the frontend build - see
+   "Frontend build" above - so it needs npm-registry access and, on the
+   first run, a one-time Node download in addition to Maven Central):
    ```bash
    ./gradlew clean build
    ```
-2. Build the image:
+2. Build the image (this step itself has no new network dependency - it
+   just copies the already-built jar):
    ```bash
    docker build -t moodtracker-app .
    ```

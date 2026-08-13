@@ -1,8 +1,6 @@
 // Pure data-transformation helpers behind the /moods charts - no DOM, no Chart.js.
-// Loaded as a plain global-scope <script> in the browser (this project has no
-// bundler), and exported via CommonJS at the bottom so they can be unit tested
-// under Node with Vitest. Keep this file free of document/window/Chart references;
-// moods.js is where the DOM- and Chart.js-dependent rendering lives.
+// Keep this file free of document/window/Chart references; moods.js is where the
+// DOM- and Chart.js-dependent rendering lives.
 
 const MONTH_ABBREVIATIONS = [
     'Jan',
@@ -93,12 +91,10 @@ function computeMoodByWeatherBuckets(data) {
         }));
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        formatDateTime,
-        formatDate,
-        buildSeries,
-        computeMoodByWeatherBuckets,
-        MONTH_ABBREVIATIONS,
-    };
-}
+export {
+    formatDateTime,
+    formatDate,
+    buildSeries,
+    computeMoodByWeatherBuckets,
+    MONTH_ABBREVIATIONS,
+};
