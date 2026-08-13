@@ -25,6 +25,7 @@ export default defineConfig({
                 app: 'frontend/css/app.css',
                 moods: 'frontend/js/moods.js',
                 'register-sw': 'frontend/js/register-sw.js',
+                'prevent-double-submit': 'frontend/js/prevent-double-submit.js',
             },
             output: {
                 entryFileNames: 'js/[name].js',
