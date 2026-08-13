@@ -12,6 +12,7 @@ node_modules/
 src/main/resources/static/css/style.css
 src/main/resources/static/js/moods.js
 src/main/resources/static/js/register-sw.js
+src/main/resources/static/js/prevent-double-submit.js
 src/main/resources/static/manifest.webmanifest
 src/main/resources/static/service-worker.js
 src/main/resources/static/apple-touch-icon.png
