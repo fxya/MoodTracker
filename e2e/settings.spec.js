@@ -9,7 +9,7 @@ test('location and time zone persist after saving', async ({ page }) => {
     await page.selectOption('#time-zone', 'Europe/London');
     await page.click('button:has-text("Save Settings")');
 
-    await expect(page.locator('.alert-success')).toContainText('Settings saved');
+    await expect(page.locator('[data-testid="alert-success"]')).toContainText('Settings saved');
 
     await page.reload();
     await expect(page.locator('#location')).toHaveValue('London');
@@ -26,7 +26,7 @@ test('changing password takes effect on next login', async ({ page }) => {
     await page.fill('#confirm-password', newPassword);
     await page.click('button:has-text("Change Password")');
 
-    await expect(page.locator('.alert-success')).toContainText('Password changed');
+    await expect(page.locator('[data-testid="alert-success"]')).toContainText('Password changed');
 
     await page.click('button:has-text("Logout")');
     await page.waitForURL('**/login**');
@@ -51,7 +51,9 @@ test('deleting the account logs the user out and invalidates their credentials',
     await page.click('button:has-text("Delete Account")');
 
     await page.waitForURL('**/login?accountDeleted**');
-    await expect(page.locator('.alert-success')).toContainText('account has been deleted');
+    await expect(page.locator('[data-testid="alert-success"]')).toContainText(
+        'account has been deleted',
+    );
 
     await page.fill('#username', username);
     await page.fill('#password', TEST_PASSWORD);

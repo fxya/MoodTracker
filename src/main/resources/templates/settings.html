@@ -11,8 +11,8 @@
 
         <h1>Settings</h1>
 
-        <div class="alert alert-success" th:if="${settingsSaved}">Settings saved.</div>
-        <div class="alert alert-danger" th:if="${settingsError}" th:text="${settingsError}">Settings Error</div>
+        <div class="alert alert-success" data-testid="alert-success" th:if="${settingsSaved}">Settings saved.</div>
+        <div class="alert alert-danger" data-testid="alert-danger" th:if="${settingsError}" th:text="${settingsError}">Settings Error</div>
 
         <form th:action="@{/settings}" method="post">
             <div>
@@ -39,8 +39,8 @@
         <div th:if="${location != null and !#strings.isEmpty(location)}">
             <h2>Backfill Weather</h2>
 
-            <div class="alert alert-success" th:if="${backfillMessage}" th:text="${backfillMessage}">Backfill Message</div>
-            <div class="alert alert-danger" th:if="${backfillError}" th:text="${backfillError}">Backfill Error</div>
+            <div class="alert alert-success" data-testid="alert-success" th:if="${backfillMessage}" th:text="${backfillMessage}">Backfill Message</div>
+            <div class="alert alert-danger" data-testid="alert-danger" th:if="${backfillError}" th:text="${backfillError}">Backfill Error</div>
 
             <p class="hero-tagline">
                 Fill in weather for moods you logged before setting a location, using your current location.
@@ -52,8 +52,8 @@
 
         <h2>Change Password</h2>
 
-        <div class="alert alert-success" th:if="${passwordChanged}">Password changed.</div>
-        <div class="alert alert-danger" th:if="${passwordError}" th:text="${passwordError}">Password Error</div>
+        <div class="alert alert-success" data-testid="alert-success" th:if="${passwordChanged}">Password changed.</div>
+        <div class="alert alert-danger" data-testid="alert-danger" th:if="${passwordError}" th:text="${passwordError}">Password Error</div>
 
         <form th:action="@{/settings/password}" method="post">
             <div>
@@ -73,7 +73,7 @@
 
         <h2>Danger Zone</h2>
 
-        <div class="alert alert-danger" th:if="${deleteError}" th:text="${deleteError}">Delete Error</div>
+        <div class="alert alert-danger" data-testid="alert-danger" th:if="${deleteError}" th:text="${deleteError}">Delete Error</div>
 
         <div class="danger-zone">
             <p>Deleting your account permanently removes it and every mood you've logged. This cannot be undone.</p>

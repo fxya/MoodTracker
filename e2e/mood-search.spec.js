@@ -9,11 +9,17 @@ test('text search filters the mood list', async ({ page }) => {
     await page.fill('#q', 'Hiking');
     await page.click('button:has-text("Filter")');
 
-    await expect(page.locator('.mood-card', { hasText: 'Hiking trip' })).toBeVisible();
-    await expect(page.locator('.mood-card', { hasText: 'Quiet evening' })).toHaveCount(0);
+    await expect(
+        page.locator('[data-testid="mood-card"]', { hasText: 'Hiking trip' }),
+    ).toBeVisible();
+    await expect(
+        page.locator('[data-testid="mood-card"]', { hasText: 'Quiet evening' }),
+    ).toHaveCount(0);
 
     await page.click('a:has-text("Clear")');
-    await expect(page.locator('.mood-card', { hasText: 'Quiet evening' })).toBeVisible();
+    await expect(
+        page.locator('[data-testid="mood-card"]', { hasText: 'Quiet evening' }),
+    ).toBeVisible();
 });
 
 test('rating range filter narrows the list', async ({ page }) => {
@@ -25,8 +31,12 @@ test('rating range filter narrows the list', async ({ page }) => {
     await page.fill('#maxRating', '10');
     await page.click('button:has-text("Filter")');
 
-    await expect(page.locator('.mood-card', { hasText: 'Pretty good' })).toBeVisible();
-    await expect(page.locator('.mood-card', { hasText: 'Rough patch' })).toHaveCount(0);
+    await expect(
+        page.locator('[data-testid="mood-card"]', { hasText: 'Pretty good' }),
+    ).toBeVisible();
+    await expect(page.locator('[data-testid="mood-card"]', { hasText: 'Rough patch' })).toHaveCount(
+        0,
+    );
 });
 
 test('pagination controls appear once there are more moods than one page', async ({ page }) => {
@@ -37,11 +47,11 @@ test('pagination controls appear once there are more moods than one page', async
         await addMood(page, { text: `Mood number ${i}`, rating: 5 });
     }
 
-    await expect(page.locator('.pagination')).toBeVisible();
-    await expect(page.locator('.pagination-status')).toContainText('Page 1 of 2');
+    await expect(page.locator('[data-testid="pagination"]')).toBeVisible();
+    await expect(page.locator('[data-testid="pagination-status"]')).toContainText('Page 1 of 2');
     await expect(page.getByRole('link', { name: 'Next' })).toBeVisible();
 
     await page.getByRole('link', { name: 'Next' }).click();
-    await expect(page.locator('.pagination-status')).toContainText('Page 2 of 2');
+    await expect(page.locator('[data-testid="pagination-status"]')).toContainText('Page 2 of 2');
     await expect(page.getByRole('link', { name: 'Previous' })).toBeVisible();
 });

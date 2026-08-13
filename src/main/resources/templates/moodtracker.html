@@ -11,11 +11,11 @@
 
         <h1>Mood Tracker</h1>
 
-        <div class="alert alert-success" th:if="${moodSaved}">Mood saved.</div>
-        <div class="alert alert-success" th:if="${moodUpdated}">Mood updated.</div>
-        <div class="alert alert-success" th:if="${moodDeleted}">Mood deleted.</div>
+        <div class="alert alert-success" data-testid="alert-success" th:if="${moodSaved}">Mood saved.</div>
+        <div class="alert alert-success" data-testid="alert-success" th:if="${moodUpdated}">Mood updated.</div>
+        <div class="alert alert-success" data-testid="alert-success" th:if="${moodDeleted}">Mood deleted.</div>
 
-        <div class="stat-card" th:if="${weeklySummary.hasData()}">
+        <div class="stat-card" data-testid="stat-card" th:if="${weeklySummary.hasData()}">
             <div class="stat-value" th:text="${#numbers.formatDecimal(weeklySummary.averageThisWeek(), 1, 1)} + '/10'">Avg</div>
             <div class="stat-label">
                 Average mood this week (<span th:text="${weeklySummary.entryCount()}">0</span>
@@ -27,7 +27,7 @@
                 <span th:text="${#numbers.formatDecimal(T(java.lang.Math).abs(weeklySummary.delta()), 1, 1)} + ' vs. last week'">vs last week</span>
             </div>
         </div>
-        <div class="stat-card stat-card-empty" th:unless="${weeklySummary.hasData()}">
+        <div class="stat-card stat-card-empty" data-testid="stat-card-empty" th:unless="${weeklySummary.hasData()}">
             <p>No moods logged this week yet.</p>
         </div>
 
@@ -82,11 +82,12 @@
             <p>No moods match your search/filters. <a th:href="@{/moodtracker}">Clear filters</a> to see everything.</p>
         </div>
         <ul th:unless="${#lists.isEmpty(moods)}">
-            <li class="mood-card" th:each="mood : ${moods}">
+            <li class="mood-card" data-testid="mood-card" th:each="mood : ${moods}">
                 <div class="mood-card-header">
                     <span class="mood-date" th:text="${mood.formattedDate}">Date</span>
                     <span class="rating-badge"
                           th:classappend="${mood.moodRating <= 3} ? 'rating-low' : (${mood.moodRating <= 6} ? 'rating-mid' : 'rating-high')"
+                          th:attr="data-testid=${mood.moodRating <= 3} ? 'rating-badge-low' : (${mood.moodRating <= 6} ? 'rating-badge-mid' : 'rating-badge-high')"
                           th:text="${mood.moodRating} + '/10'">Rating</span>
                 </div>
                 <p class="mood-text" th:text="${mood.mood}">Mood Text</p>
@@ -108,10 +109,10 @@
             </li>
         </ul>
 
-        <div class="pagination" th:if="${moodPage.totalPages > 1}">
+        <div class="pagination" data-testid="pagination" th:if="${moodPage.totalPages > 1}">
             <a class="btn btn-secondary btn-sm" th:if="${moodPage.hasPrevious()}"
                th:href="@{/moodtracker(q=${q}, minRating=${minRating}, maxRating=${maxRating}, page=${moodPage.number - 1})}">Previous</a>
-            <span class="pagination-status">Page <span th:text="${moodPage.number + 1}">1</span> of <span th:text="${moodPage.totalPages}">1</span></span>
+            <span class="pagination-status" data-testid="pagination-status">Page <span th:text="${moodPage.number + 1}">1</span> of <span th:text="${moodPage.totalPages}">1</span></span>
             <a class="btn btn-secondary btn-sm" th:if="${moodPage.hasNext()}"
                th:href="@{/moodtracker(q=${q}, minRating=${minRating}, maxRating=${maxRating}, page=${moodPage.number + 1})}">Next</a>
         </div>
