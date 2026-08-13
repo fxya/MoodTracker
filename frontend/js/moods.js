@@ -30,9 +30,13 @@ function renderTable(data) {
     const tableBody = document.querySelector('tbody');
     data.forEach((mood) => {
         const row = document.createElement('tr');
+        row.className = 'border-b border-border-soft last:border-0';
         const dateCell = document.createElement('td');
         const ratingCell = document.createElement('td');
         const moodCell = document.createElement('td');
+        dateCell.className = 'px-4 py-3 text-ink-muted';
+        ratingCell.className = 'px-4 py-3 font-semibold text-ink';
+        moodCell.className = 'px-4 py-3 text-ink';
 
         const date = new Date(mood.date);
         dateCell.textContent = Number.isNaN(date.getTime()) ? mood.date : formatDateTime(date);
@@ -74,6 +78,7 @@ function renderLineChart(canvasId, labels, values, { color, fillColor, label, su
             ],
         },
         options: {
+            animation: false,
             plugins: {
                 legend: {
                     display: false,
