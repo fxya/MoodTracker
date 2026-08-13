@@ -33,10 +33,13 @@ export async function registerAndLogin(
     return { username, password, email };
 }
 
-export async function addMood(page, { text, rating, notes = '' }) {
+export async function addMood(page, { text, rating, notes = '', tag = '' }) {
     await page.goto('/moodtracker');
     await page.fill('#mood-text', text);
     await page.fill('#mood-rating', String(rating));
+    if (tag) {
+        await page.selectOption('#mood-tag', tag);
+    }
     if (notes) {
         await page.fill('#notes', notes);
     }

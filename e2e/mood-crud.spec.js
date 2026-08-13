@@ -44,6 +44,14 @@ test('rating tiers map to low/mid/high badge testids', async () => {
     );
 });
 
+test('mood tag renders as a badge and appears as the weekly summary top tag', async () => {
+    await addMood(sharedPage, { text: 'Tagged mood', rating: 7, tag: 'Excited' });
+
+    const card = sharedPage.locator('[data-testid="mood-card"]', { hasText: 'Tagged mood' });
+    await expect(card.locator('[data-testid="mood-tag-badge"]')).toHaveText('Excited');
+    await expect(sharedPage.locator('[data-testid="top-tag"]')).toContainText('Excited');
+});
+
 test('editing a mood persists the change', async () => {
     await addMood(sharedPage, { text: 'Original text', rating: 5 });
 
