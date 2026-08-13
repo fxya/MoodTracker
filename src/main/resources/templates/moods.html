@@ -6,9 +6,9 @@
   <link rel="manifest" href="/manifest.webmanifest"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
   <meta name="theme-color" content="#6b7f3f"/>
-  <script type="module" src="/js/register-sw.js"></script>
-  <script type="module" src="/js/prevent-double-submit.js"></script>
-  <link rel="stylesheet" href="/css/style.css"/>
+  <script type="module" th:src="@{/js/register-sw.js}"></script>
+  <script type="module" th:src="@{/js/prevent-double-submit.js}"></script>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
 <body class="min-h-screen bg-bg font-sans text-ink antialiased">
 <div class="mx-auto max-w-3xl px-4 py-10">
@@ -63,5 +63,5 @@
   <div><a class="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink" href="/moodtracker">Return</a></div>
 </div>
 </body>
-<script type="module" src="/js/moods.js"></script>
+<script type="module" th:src="@{/js/moods.js}"></script>
 </html>

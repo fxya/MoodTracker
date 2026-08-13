@@ -2,15 +2,19 @@
 // navigations, POSTs, or /api/** - since pages carry session-bound CSRF
 // tokens and per-user data that must never be served stale from cache.
 //
-// Bump this version string whenever a static-shell file changes: build
-// output filenames aren't content-hashed (see vite.config.js), so this is
-// the only cache-busting signal available.
-const CACHE_NAME = 'moodtracker-static-v1';
+// Bump this version string whenever a static-shell file changes: for the
+// non-hashed assets below (icons/manifest/favicon), this is the only
+// cache-busting signal available.
+const CACHE_NAME = 'moodtracker-static-v2';
 
+// /css/** and /js/** are deliberately NOT precached here: their URLs are now
+// content-hashed by Spring's resource chain (see application.properties'
+// spring.web.resources.chain.strategy.content.*), so this hand-authored,
+// build-time-static file can't know the current hashed URLs ahead of time.
+// The fetch handler below still lazily caches them via stale-while-revalidate
+// on first request - this is a graceful downgrade from eager to lazy for
+// just those two directories.
 const STATIC_ASSETS = [
-    '/css/style.css',
-    '/js/moods.js',
-    '/js/register-sw.js',
     '/favicon.svg',
     '/manifest.webmanifest',
     '/icons/icon-192.png',
