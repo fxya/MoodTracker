@@ -188,8 +188,10 @@ public class MoodController {
   }
 
   // Editing only touches what a user would plausibly want to fix (mood text,
-  // rating, notes) - date and weather stay as they were when the mood was
-  // originally logged, since they describe that moment, not the edit.
+  // rating, notes, tag) - date stays as it was when the mood was originally
+  // logged, since it describes that moment, not the edit. Weather is the one
+  // exception: it's user-editable (see fields below) since the auto-fetched
+  // value can simply be wrong (e.g. logged while traveling).
   @PostMapping("/{id}/edit")
   public String updateMood(
       @PathVariable Long id,
@@ -197,6 +199,8 @@ public class MoodController {
       @RequestParam("moodRating") Integer moodRating,
       @RequestParam(value = "notes", required = false) String notes,
       @RequestParam(value = "moodTag", required = false) String moodTag,
+      @RequestParam(value = "temperatureC", required = false) Double temperatureC,
+      @RequestParam(value = "precipitationMm", required = false) Double precipitationMm,
       Authentication authentication,
       RedirectAttributes redirectAttributes) {
     Mood mood = ownedMoodOrNotFound(id, authentication);
@@ -204,10 +208,34 @@ public class MoodController {
     mood.setMoodRating(moodRating);
     mood.setNotes(notes);
     mood.setMoodTag(moodTag == null || moodTag.isBlank() ? null : moodTag);
+    applyWeatherEdit(mood, temperatureC, precipitationMm);
     moodRepository.save(mood);
 
     redirectAttributes.addFlashAttribute("moodUpdated", true);
     return "redirect:/moodtracker";
+  }
+
+  // A blank field means "leave unchanged", not "clear" - avoids ambiguity about
+  // whether an empty input means "no weather" or "didn't touch this". Mutates the
+  // existing Weather in place rather than replacing mood.weather with a new
+  // instance: the @OneToOne has no orphanRemoval, so swapping the reference would
+  // leave the old row orphaned. Only creates a Weather if the mood didn't have one
+  // and the user actually entered a value.
+  private void applyWeatherEdit(Mood mood, Double temperatureC, Double precipitationMm) {
+    if (temperatureC == null && precipitationMm == null) {
+      return;
+    }
+    Weather weather = mood.getWeather();
+    if (weather == null) {
+      weather = new Weather();
+      mood.setWeather(weather);
+    }
+    if (temperatureC != null) {
+      weather.setTemperatureC(temperatureC);
+    }
+    if (precipitationMm != null) {
+      weather.setPrecipitationMm(precipitationMm);
+    }
   }
 
   @PostMapping("/{id}/delete")

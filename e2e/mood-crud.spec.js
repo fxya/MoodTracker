@@ -78,6 +78,40 @@ test('editing a mood persists the change', async () => {
     ).toHaveCount(0);
 });
 
+test('weather can be added via edit when the mood had none, then corrected', async () => {
+    await addMood(sharedPage, { text: 'Weatherless mood', rating: 6 });
+
+    await sharedPage
+        .locator('[data-testid="mood-card"]', { hasText: 'Weatherless mood' })
+        .getByRole('link', { name: 'Edit', exact: true })
+        .click();
+    await sharedPage.waitForURL('**/moodtracker/*/edit');
+
+    // No location is set for this user, so this mood has no weather yet -
+    // filling these in exercises the "create a Weather" path.
+    await sharedPage.fill('#temperature-c', '21.5');
+    await sharedPage.fill('#precipitation-mm', '0');
+    await sharedPage.click('button:has-text("Save Changes")');
+    await sharedPage.waitForURL('**/moodtracker');
+
+    let card = sharedPage.locator('[data-testid="mood-card"]', { hasText: 'Weatherless mood' });
+    await expect(card).toContainText('21.5°C');
+    await expect(card).toContainText('0.0mm rain');
+
+    // Editing again with only one field filled must leave the other untouched.
+    await card.getByRole('link', { name: 'Edit', exact: true }).click();
+    await sharedPage.waitForURL('**/moodtracker/*/edit');
+    await expect(sharedPage.locator('#temperature-c')).toHaveValue('21.5');
+    await sharedPage.fill('#temperature-c', '25');
+    await sharedPage.fill('#precipitation-mm', '');
+    await sharedPage.click('button:has-text("Save Changes")');
+    await sharedPage.waitForURL('**/moodtracker');
+
+    card = sharedPage.locator('[data-testid="mood-card"]', { hasText: 'Weatherless mood' });
+    await expect(card).toContainText('25.0°C');
+    await expect(card).toContainText('0.0mm rain');
+});
+
 test('deleting a mood removes it from the list', async () => {
     await addMood(sharedPage, { text: 'To be deleted', rating: 4 });
 
