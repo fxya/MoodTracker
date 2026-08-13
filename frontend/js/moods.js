@@ -7,13 +7,25 @@ import { formatDateTime, buildSeries, computeMoodByWeatherBuckets } from './mood
 
 // Chart.js draws to a canvas, so its colors are plain JS values, not CSS -
 // they can't pick up the app's `@media (prefers-color-scheme: dark)` tokens
-// on their own. Read the same preference once here instead, matching
-// frontend/css/app.css's --color-border / --color-border-soft dark values.
-const PREFERS_DARK =
-    typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-color-scheme: dark)').matches;
-const GRID_COLOR = PREFERS_DARK ? '#453f2e' : '#e8d9bc';
+// (or the data-theme override, set by the inline script in <head> from the
+// Settings-page preference) on their own. Read the same resolved state once
+// here instead, matching frontend/css/app.css's --color-border /
+// --color-border-soft dark values.
+function resolveIsDark() {
+    const theme = document.documentElement.dataset.theme;
+    if (theme === 'dark') {
+        return true;
+    }
+    if (theme === 'light') {
+        return false;
+    }
+    return (
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches
+    );
+}
+const GRID_COLOR = resolveIsDark() ? '#453f2e' : '#e8d9bc';
 
 document.addEventListener('DOMContentLoaded', function () {
     fetch('/api/moods')

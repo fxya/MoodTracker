@@ -16,6 +16,33 @@ test('location and time zone persist after saving', async ({ page }) => {
     await expect(page.locator('#time-zone')).toHaveValue('Europe/London');
 });
 
+test('theme preference persists via localStorage and applies data-theme on reload', async ({
+    page,
+}) => {
+    await registerAndLogin(page);
+    await page.goto('/settings');
+
+    await expect(page.locator('[data-testid="theme-option"][value="system"]')).toBeChecked();
+
+    await Promise.all([
+        page.waitForNavigation(),
+        page.locator('[data-testid="theme-option"][value="dark"]').click(),
+    ]);
+    expect(await page.evaluate(() => localStorage.getItem('theme'))).toBe('dark');
+    expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe('dark');
+    await expect(page.locator('[data-testid="theme-option"][value="dark"]')).toBeChecked();
+
+    await page.reload();
+    await expect(page.locator('[data-testid="theme-option"][value="dark"]')).toBeChecked();
+    expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe('dark');
+
+    await Promise.all([
+        page.waitForNavigation(),
+        page.locator('[data-testid="theme-option"][value="system"]').click(),
+    ]);
+    expect(await page.evaluate(() => localStorage.getItem('theme'))).toBeNull();
+});
+
 test('changing password takes effect on next login', async ({ page }) => {
     const { username } = await registerAndLogin(page);
     const newPassword = 'NewPass456!';

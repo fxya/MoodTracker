@@ -3,6 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Mood Tracker</title>
+    <script>
+        (function () {
+            var theme = localStorage.getItem('theme');
+            if (theme === 'light' || theme === 'dark') {
+                document.documentElement.dataset.theme = theme;
+            }
+        })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
     <link rel="manifest" href="/manifest.webmanifest"/>
     <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>

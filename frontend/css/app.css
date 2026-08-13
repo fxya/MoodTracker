@@ -42,10 +42,15 @@
 }
 
 /* Dark mode: same tokens re-stepped for a dark surface, not an automatic
-   invert - anchors chosen so text/badge/button contrast still holds. The
-   app has no explicit theme toggle, so this is purely OS-preference driven. */
+   invert - anchors chosen so text/badge/button contrast still holds.
+   Three states: system default (media query, unless explicitly overridden
+   to light), explicit light override, explicit dark override. The explicit
+   states are driven by a `data-theme` attribute on <html>, set by an inline
+   script in every template's <head> from a Settings-page preference stored
+   in localStorage - see settings.html and frontend/js/moods.js's
+   resolveIsDark(). */
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme='light']) {
         --color-bg: #201d17;
         --color-surface: #2a261d;
         --color-surface-alt: #332e22;
@@ -74,6 +79,36 @@
         --color-danger-bg: #3c281f;
         --color-danger-border: #4f3527;
     }
+}
+
+:root[data-theme='dark'] {
+    --color-bg: #201d17;
+    --color-surface: #2a261d;
+    --color-surface-alt: #332e22;
+    --color-border: #453f2e;
+    --color-border-soft: #3a3527;
+
+    --color-ink: #f1ead9;
+    --color-ink-muted: #bdb192;
+    --color-ink-faint: #837a62;
+
+    --color-accent: #a3bb6e;
+    --color-accent-deep: #b6cc84;
+    --color-accent-soft: #333a24;
+
+    --color-rating-low: #e2977a;
+    --color-rating-low-bg: #3c281f;
+    --color-rating-mid: #e3c069;
+    --color-rating-mid-bg: #3a3220;
+    --color-rating-high: #92c08f;
+    --color-rating-high-bg: #22331f;
+
+    --color-success: #92c08f;
+    --color-success-bg: #22331f;
+    --color-success-border: #354a2f;
+    --color-danger: #e2977a;
+    --color-danger-bg: #3c281f;
+    --color-danger-border: #4f3527;
 }
 
 @layer base {
