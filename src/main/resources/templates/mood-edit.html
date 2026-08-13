@@ -36,6 +36,21 @@
                 <input type="number" id="mood-rating" th:field="*{moodRating}" min="1" max="10" required
                        class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
             </div>
+            <div class="mb-4">
+                <label for="mood-tag" class="mb-1.5 block text-xs font-semibold text-ink-muted">Tag (optional):</label>
+                <select id="mood-tag" th:field="*{moodTag}"
+                        class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft">
+                    <option value="">No tag</option>
+                    <option value="Happy">Happy</option>
+                    <option value="Sad">Sad</option>
+                    <option value="Anxious">Anxious</option>
+                    <option value="Calm">Calm</option>
+                    <option value="Excited">Excited</option>
+                    <option value="Angry">Angry</option>
+                    <option value="Tired">Tired</option>
+                    <option value="Content">Content</option>
+                </select>
+            </div>
             <div class="mb-5">
                 <label for="notes" class="mb-1.5 block text-xs font-semibold text-ink-muted">Notes:</label>
                 <textarea id="notes" th:field="*{notes}" rows="3"

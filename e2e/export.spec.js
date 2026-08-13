@@ -20,7 +20,7 @@ test('CSV export includes the download header, the logged mood, and its link is 
     expect(response.status()).toBe(200);
     expect(response.headers()['content-disposition']).toContain('attachment; filename="moods.csv"');
     const body = await response.text();
-    expect(body).toContain('Date,Mood,Rating,Notes,TemperatureC,PrecipitationMm');
+    expect(body).toContain('Date,Mood,Rating,Tag,Notes,TemperatureC,PrecipitationMm');
     expect(body).toContain('Exportable mood');
     expect(body).toContain('For the export test');
 });

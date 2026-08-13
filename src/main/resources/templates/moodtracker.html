@@ -35,6 +35,9 @@
                     Average mood this week (<span th:text="${weeklySummary.entryCount()}">0</span>
                     <span th:text="${weeklySummary.entryCount() == 1} ? 'entry' : 'entries'">entries</span>)
                 </div>
+                <div class="mt-1 text-xs text-ink-faint" th:if="${weeklySummary.topTag() != null}" data-testid="top-tag">
+                    Most common: <span class="font-semibold text-ink-muted" th:text="${weeklySummary.topTag()}">Tag</span>
+                </div>
             </div>
             <div class="text-sm font-semibold" th:if="${weeklySummary.hasComparison()}"
                  th:classappend="${weeklySummary.delta() > 0} ? 'text-rating-high' : (${weeklySummary.delta() < 0} ? 'text-rating-low' : 'text-ink-faint')">
@@ -58,6 +61,21 @@
                 <label for="mood-rating" class="mb-1.5 block text-xs font-semibold text-ink-muted">Rating (1-10):</label>
                 <input type="number" id="mood-rating" th:field="*{moodRating}" min="1" max="10" required
                        class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
+            </div>
+            <div class="mb-4">
+                <label for="mood-tag" class="mb-1.5 block text-xs font-semibold text-ink-muted">Tag (optional):</label>
+                <select id="mood-tag" th:field="*{moodTag}"
+                        class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft">
+                    <option value="">No tag</option>
+                    <option value="Happy">Happy</option>
+                    <option value="Sad">Sad</option>
+                    <option value="Anxious">Anxious</option>
+                    <option value="Calm">Calm</option>
+                    <option value="Excited">Excited</option>
+                    <option value="Angry">Angry</option>
+                    <option value="Tired">Tired</option>
+                    <option value="Content">Content</option>
+                </select>
             </div>
             <div class="mb-5">
                 <label for="notes" class="mb-1.5 block text-xs font-semibold text-ink-muted">Notes:</label>
@@ -113,6 +131,7 @@
                           th:text="${mood.moodRating} + '/10'">Rating</span>
                 </div>
                 <p class="mt-1 font-display text-lg text-ink" th:text="${mood.mood}">Mood Text</p>
+                <span class="mt-1 inline-block rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent-deep" data-testid="mood-tag-badge" th:if="${mood.moodTag != null and !mood.moodTag.isEmpty()}" th:text="${mood.moodTag}">Tag</span>
                 <p class="mt-1 text-xs text-ink-faint" th:if="${mood.weather != null}">
                     <span th:if="${mood.weather.temperatureC != null}"
                           th:text="${#numbers.formatDecimal(mood.weather.temperatureC, 1, 1)} + '°C'">Temp</span>

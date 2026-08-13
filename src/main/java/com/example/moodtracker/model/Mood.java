@@ -21,6 +21,12 @@ public class Mood {
   private Instant date;
   private Integer moodRating;
 
+  // Optional, quick-select category alongside the free-text `mood` field
+  // above - lets moods be grouped/analyzed (e.g. "most common mood this
+  // week") without parsing free text. Fixed vocabulary enforced client-side
+  // via a <select>, not a separate entity/table - see moodtracker.html.
+  private String moodTag;
+
   @Column(name = "notes", columnDefinition = "TEXT")
   private String notes;
 

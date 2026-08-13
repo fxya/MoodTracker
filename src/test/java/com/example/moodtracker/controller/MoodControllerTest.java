@@ -107,6 +107,42 @@ public class MoodControllerTest {
   }
 
   @Test
+  void testAddMoodWithTag() {
+    Mood moodFormData = new Mood();
+    moodFormData.setMood("Happy");
+    moodFormData.setMoodRating(9);
+    moodFormData.setMoodTag("Content");
+
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+    ArgumentCaptor<Mood> moodArgumentCaptor = ArgumentCaptor.forClass(Mood.class);
+    RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
+
+    moodController.addMood(moodFormData, authentication, redirectAttributes);
+
+    verify(moodRepository).save(moodArgumentCaptor.capture());
+    assertEquals("Content", moodArgumentCaptor.getValue().getMoodTag());
+  }
+
+  @Test
+  void testAddMood_blankTagNormalizedToNull() {
+    Mood moodFormData = new Mood();
+    moodFormData.setMood("Happy");
+    moodFormData.setMoodRating(9);
+    moodFormData.setMoodTag("");
+
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+    ArgumentCaptor<Mood> moodArgumentCaptor = ArgumentCaptor.forClass(Mood.class);
+    RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
+
+    moodController.addMood(moodFormData, authentication, redirectAttributes);
+
+    verify(moodRepository).save(moodArgumentCaptor.capture());
+    assertNull(moodArgumentCaptor.getValue().getMoodTag());
+  }
+
+  @Test
   void testAddMood_fetchesWeatherWhenUserHasLocationSet() {
     testUser.setLocation("London");
     Weather london = new Weather();
@@ -313,6 +349,43 @@ public class MoodControllerTest {
   }
 
   @Test
+  void testGetMoodsPage_weeklySummary_topTagIsMostFrequentThisWeek() {
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+    when(moodRepository.search(eq(testUser), isNull(), isNull(), isNull(), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+    Instant now = Instant.now();
+    Mood tagged1 = moodWithRating(8, now.minus(1, ChronoUnit.DAYS));
+    tagged1.setMoodTag("Happy");
+    Mood tagged2 = moodWithRating(6, now.minus(2, ChronoUnit.DAYS));
+    tagged2.setMoodTag("Happy");
+    Mood untagged = moodWithRating(5, now.minus(3, ChronoUnit.DAYS));
+    when(moodRepository.findByUserAndDateAfterOrderByDateDesc(eq(testUser), any(Instant.class)))
+        .thenReturn(List.of(tagged1, tagged2, untagged));
+
+    ArgumentCaptor<WeeklySummary> summaryCaptor = ArgumentCaptor.forClass(WeeklySummary.class);
+    moodController.getMoodsPage(null, null, null, 0, model, authentication);
+    verify(model).addAttribute(eq("weeklySummary"), summaryCaptor.capture());
+
+    assertEquals("Happy", summaryCaptor.getValue().topTag());
+  }
+
+  @Test
+  void testGetMoodsPage_weeklySummary_topTagNullWhenNoneTagged() {
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+    when(moodRepository.search(eq(testUser), isNull(), isNull(), isNull(), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(Collections.emptyList()));
+    when(moodRepository.findByUserAndDateAfterOrderByDateDesc(eq(testUser), any(Instant.class)))
+        .thenReturn(List.of(moodWithRating(8, Instant.now().minus(1, ChronoUnit.DAYS))));
+
+    ArgumentCaptor<WeeklySummary> summaryCaptor = ArgumentCaptor.forClass(WeeklySummary.class);
+    moodController.getMoodsPage(null, null, null, 0, model, authentication);
+    verify(model).addAttribute(eq("weeklySummary"), summaryCaptor.capture());
+
+    assertNull(summaryCaptor.getValue().topTag());
+  }
+
+  @Test
   void testGetMoodsPage_weeklySummary_noEntriesAtAll() {
     when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
     when(moodRepository.search(eq(testUser), isNull(), isNull(), isNull(), any(Pageable.class)))
@@ -380,16 +453,32 @@ public class MoodControllerTest {
 
     String viewName =
         moodController.updateMood(
-            5L, "Happy", 9, "Feeling better", authentication, redirectAttributes);
+            5L, "Happy", 9, "Feeling better", "Content", authentication, redirectAttributes);
 
     assertEquals("redirect:/moodtracker", viewName);
     assertEquals("Happy", mood.getMood());
     assertEquals(9, mood.getMoodRating());
     assertEquals("Feeling better", mood.getNotes());
-    // Editing only touches text/rating/notes - date must be untouched.
+    assertEquals("Content", mood.getMoodTag());
+    // Editing only touches text/rating/notes/tag - date must be untouched.
     assertEquals(originalDate, mood.getDate());
     verify(moodRepository).save(mood);
     verify(redirectAttributes).addFlashAttribute("moodUpdated", true);
+  }
+
+  @Test
+  void testUpdateMood_blankTagNormalizedToNull() {
+    Mood mood = new Mood();
+    mood.setId(5L);
+    mood.setMoodTag("Happy");
+
+    RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+    when(moodRepository.findByIdAndUser(5L, testUser)).thenReturn(Optional.of(mood));
+
+    moodController.updateMood(5L, "Happy", 9, null, "", authentication, redirectAttributes);
+
+    assertNull(mood.getMoodTag());
   }
 
   @Test
@@ -400,7 +489,9 @@ public class MoodControllerTest {
 
     assertThrows(
         ResponseStatusException.class,
-        () -> moodController.updateMood(5L, "Happy", 9, null, authentication, redirectAttributes));
+        () ->
+            moodController.updateMood(
+                5L, "Happy", 9, null, null, authentication, redirectAttributes));
     verify(moodRepository, never()).save(any());
   }
 
@@ -442,6 +533,7 @@ public class MoodControllerTest {
     weather.setPrecipitationMm(0.2);
     Mood mood = moodWithRating(8, Instant.parse("2026-01-15T10:30:00Z"));
     mood.setMood("Happy");
+    mood.setMoodTag("Content");
     mood.setNotes("Great day");
     mood.setWeather(weather);
     when(moodRepository.findByUserOrderByDateDesc(testUser)).thenReturn(List.of(mood));
@@ -453,8 +545,8 @@ public class MoodControllerTest {
         "attachment; filename=\"moods.csv\"",
         response.getHeaders().getFirst("Content-Disposition"));
     String body = response.getBody();
-    assertTrue(body.startsWith("Date,Mood,Rating,Notes,TemperatureC,PrecipitationMm\r\n"));
-    assertTrue(body.contains("2026-01-15T10:30:00Z,Happy,8,Great day,14.5,0.2\r\n"));
+    assertTrue(body.startsWith("Date,Mood,Rating,Tag,Notes,TemperatureC,PrecipitationMm\r\n"));
+    assertTrue(body.contains("2026-01-15T10:30:00Z,Happy,8,Content,Great day,14.5,0.2\r\n"));
   }
 
   @Test

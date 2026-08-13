@@ -13,6 +13,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -118,13 +120,14 @@ public class MoodController {
 
   private static String toCsv(List<Mood> moods) {
     StringBuilder csv =
-        new StringBuilder("Date,Mood,Rating,Notes,TemperatureC,PrecipitationMm\r\n");
+        new StringBuilder("Date,Mood,Rating,Tag,Notes,TemperatureC,PrecipitationMm\r\n");
     for (Mood mood : moods) {
       Weather weather = mood.getWeather();
       csv.append(csvField(mood.getDate() == null ? null : mood.getDate().toString())).append(',');
       csv.append(csvField(mood.getMood())).append(',');
       csv.append(csvField(mood.getMoodRating() == null ? null : mood.getMoodRating().toString()))
           .append(',');
+      csv.append(csvField(mood.getMoodTag())).append(',');
       csv.append(csvField(mood.getNotes())).append(',');
       csv.append(
               csvField(
@@ -166,6 +169,11 @@ public class MoodController {
     mood.setDate(Instant.now());
     // Assuming mood.mood (String) and mood.moodRating (Integer) are set from the form
     mood.setWeather(fetchWeatherForUser(user));
+    // The tag <select>'s unselected option submits an empty string, not absent -
+    // normalize that to null so "no tag" reads the same as never having set one.
+    if (mood.getMoodTag() != null && mood.getMoodTag().isBlank()) {
+      mood.setMoodTag(null);
+    }
     moodRepository.save(mood);
 
     redirectAttributes.addFlashAttribute("moodSaved", true);
@@ -188,12 +196,14 @@ public class MoodController {
       @RequestParam("mood") String moodText,
       @RequestParam("moodRating") Integer moodRating,
       @RequestParam(value = "notes", required = false) String notes,
+      @RequestParam(value = "moodTag", required = false) String moodTag,
       Authentication authentication,
       RedirectAttributes redirectAttributes) {
     Mood mood = ownedMoodOrNotFound(id, authentication);
     mood.setMood(moodText);
     mood.setMoodRating(moodRating);
     mood.setNotes(notes);
+    mood.setMoodTag(moodTag == null || moodTag.isBlank() ? null : moodTag);
     moodRepository.save(mood);
 
     redirectAttributes.addFlashAttribute("moodUpdated", true);
@@ -256,13 +266,30 @@ public class MoodController {
     List<Mood> thisWeek = recent.stream().filter(m -> m.getDate().isAfter(oneWeekAgo)).toList();
     List<Mood> lastWeek = recent.stream().filter(m -> !m.getDate().isAfter(oneWeekAgo)).toList();
 
-    return new WeeklySummary(thisWeek.size(), averageRating(thisWeek), averageRating(lastWeek));
+    return new WeeklySummary(
+        thisWeek.size(), averageRating(thisWeek), averageRating(lastWeek), topTag(thisWeek));
   }
 
   private Double averageRating(List<Mood> moods) {
     return moods.isEmpty()
         ? null
         : moods.stream().mapToInt(Mood::getMoodRating).average().orElseThrow();
+  }
+
+  // Most frequent tag this week, ignoring untagged entries - null if no mood this
+  // week had a tag set, or ties are broken arbitrarily (Map.Entry.comparingByValue
+  // doesn't guarantee which of an equal-count pair wins, which is fine for a
+  // lightweight stat-card callout).
+  private String topTag(List<Mood> moods) {
+    return moods.stream()
+        .map(Mood::getMoodTag)
+        .filter(tag -> tag != null && !tag.isBlank())
+        .collect(Collectors.groupingBy(tag -> tag, Collectors.counting()))
+        .entrySet()
+        .stream()
+        .max(Map.Entry.comparingByValue())
+        .map(Map.Entry::getKey)
+        .orElse(null);
   }
 
   // Weather is a nice-to-have on top of a logged mood, not a requirement for logging

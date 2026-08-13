@@ -20,6 +20,7 @@ CREATE TABLE mood (
     mood VARCHAR(255),
     date TIMESTAMP,
     mood_rating INTEGER,
+    mood_tag VARCHAR(255),
     notes TEXT,
     weather_id BIGINT,
     user_id BIGINT,
