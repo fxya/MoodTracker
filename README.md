@@ -1,5 +1,7 @@
 # MoodTracker
 
+[![CI](https://github.com/fxya/MoodTracker/actions/workflows/ci.yml/badge.svg)](https://github.com/fxya/MoodTracker/actions/workflows/ci.yml)
+
 A personal mood-tracking web app. Log a mood with a 1-10 rating and notes, and
 MoodTracker automatically saves the local weather (temperature and
 precipitation) alongside it, so you can look back and see whether the two
@@ -142,6 +144,34 @@ series building, dry/rainy bucketing) has its own small Vitest suite:
 npm install
 npm test
 ```
+
+### End-to-end tests
+
+The `e2e/` suite drives a real Chromium browser against a real running app
+(via [Playwright](https://playwright.dev/)), covering the actual user
+journeys: register/login/logout, adding/editing/deleting/searching moods,
+CSV/JSON export, and the settings flows (location/time zone, password
+change, account deletion). It manages the app process itself
+(`playwright.config.js`'s `webServer` runs `./gradlew bootRun` and waits for
+it to be ready), so you only need Postgres already running, same as
+`./gradlew test`:
+```bash
+npm install
+npx playwright install --with-deps chromium   # first time only
+npm run test:e2e
+```
+Weather/backfill is deliberately **not** covered here - those flows call a
+real third-party API (Open-Meteo), and relying on it from e2e tests would
+make the suite flaky and non-deterministic. That logic is already covered by
+`WeatherServiceTest`/`SettingsControllerTest` with a mocked `WebClient`; e2e
+tests simply never set a location, which is itself a real (if implicit)
+check of the app's designed-in "weather is optional" degradation path.
+
+Several tests in `e2e/mood-crud.spec.js` share one logged-in session across
+tests (`test.describe.configure({ mode: 'serial' })`) rather than
+registering/logging in fresh for every single test - a full suite doing that
+would run into the login rate limit described above, since it's a real
+per-IP limit and all e2e traffic comes from the same machine.
 
 ## Code style
 

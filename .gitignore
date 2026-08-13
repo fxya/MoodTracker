@@ -12,6 +12,11 @@ node_modules/
 src/main/resources/static/css/style.css
 src/main/resources/static/js/moods.js
 
+### Playwright (e2e/ - see playwright.config.js) ###
+playwright-report/
+test-results/
+blob-report/
+
 ### STS ###
 .apt_generated
 .classpath
