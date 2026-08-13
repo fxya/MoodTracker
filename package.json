@@ -2,18 +2,20 @@
   "name": "moodtracker-frontend-tooling",
   "private": true,
   "type": "module",
-  "description": "Frontend build tooling: Vite compiles frontend/css (Tailwind CSS v4) and frontend/js into src/main/resources/static, Vitest covers the pure JS logic in frontend/js, and Prettier formats frontend/js and frontend/css. Wired into the Gradle build via the node-gradle plugin - see build.gradle.",
+  "description": "Frontend build tooling: Vite compiles frontend/css (Tailwind CSS v4) and frontend/js into src/main/resources/static, Vitest covers the pure JS logic in frontend/js, Playwright drives the e2e/ suite against a running app, and Prettier formats frontend/js and frontend/css. Wired into the Gradle build via the node-gradle plugin - see build.gradle.",
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
     "test": "vitest run",
-    "format": "prettier --write \"frontend/js/**/*.{js,mjs}\" \"frontend/css/**/*.css\"",
-    "format:check": "prettier --check \"frontend/js/**/*.{js,mjs}\" \"frontend/css/**/*.css\""
+    "test:e2e": "playwright test",
+    "format": "prettier --write \"frontend/js/**/*.{js,mjs}\" \"frontend/css/**/*.css\" \"e2e/**/*.js\" \"playwright.config.js\"",
+    "format:check": "prettier --check \"frontend/js/**/*.{js,mjs}\" \"frontend/css/**/*.css\" \"e2e/**/*.js\" \"playwright.config.js\""
   },
   "dependencies": {
     "chart.js": "^4.5.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.0.0",
     "prettier": "^3.0.0",
     "tailwindcss": "^4.0.0",
