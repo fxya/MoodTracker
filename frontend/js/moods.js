@@ -5,6 +5,16 @@
 import Chart from 'chart.js/auto';
 import { formatDateTime, buildSeries, computeMoodByWeatherBuckets } from './mood-analysis.js';
 
+// Chart.js draws to a canvas, so its colors are plain JS values, not CSS -
+// they can't pick up the app's `@media (prefers-color-scheme: dark)` tokens
+// on their own. Read the same preference once here instead, matching
+// frontend/css/app.css's --color-border / --color-border-soft dark values.
+const PREFERS_DARK =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches;
+const GRID_COLOR = PREFERS_DARK ? '#453f2e' : '#e8d9bc';
+
 document.addEventListener('DOMContentLoaded', function () {
     fetch('/api/moods')
         .then((response) => response.json())
@@ -74,7 +84,7 @@ function renderLineChart(canvasId, labels, values, { color, fillColor, label, su
                     beginAtZero: true,
                     suggestedMax: suggestedMax,
                     grid: {
-                        color: '#e3ded6',
+                        color: GRID_COLOR,
                     },
                 },
                 x: {
@@ -90,8 +100,8 @@ function renderLineChart(canvasId, labels, values, { color, fillColor, label, su
 function renderMoodChart(data) {
     const { labels, values } = buildSeries(data, (mood) => mood.moodRating);
     renderLineChart('moodTrendChart', labels, values, {
-        color: '#5b52d6',
-        fillColor: 'rgba(91, 82, 214, 0.12)',
+        color: '#6b7f3f',
+        fillColor: 'rgba(107, 127, 63, 0.12)',
         label: 'Mood Rating',
         suggestedMax: 10,
     });
@@ -118,16 +128,16 @@ function renderWeatherCharts(data) {
 
     if (hasTemperature) {
         renderLineChart('temperatureChart', temperature.labels, temperature.values, {
-            color: '#b3590a',
-            fillColor: 'rgba(179, 89, 10, 0.12)',
+            color: '#b4502e',
+            fillColor: 'rgba(180, 80, 46, 0.12)',
             label: 'Temperature (°C)',
         });
     }
 
     if (hasPrecipitation) {
         renderLineChart('precipitationChart', precipitation.labels, precipitation.values, {
-            color: '#2062a8',
-            fillColor: 'rgba(32, 98, 168, 0.12)',
+            color: '#5b7f8c',
+            fillColor: 'rgba(91, 127, 140, 0.12)',
             label: 'Precipitation (mm)',
         });
     }
@@ -178,7 +188,7 @@ function renderCorrelationChart(data) {
                     beginAtZero: true,
                     max: 10,
                     grid: {
-                        color: '#e3ded6',
+                        color: GRID_COLOR,
                     },
                 },
                 x: {

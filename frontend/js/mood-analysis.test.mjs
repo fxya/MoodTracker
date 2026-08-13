@@ -83,8 +83,8 @@ describe('computeMoodByWeatherBuckets', () => {
         const buckets = computeMoodByWeatherBuckets(data);
 
         expect(buckets).toEqual([
-            { label: 'Dry', color: '#7fa8d9', count: 2, average: 7 },
-            { label: 'Rainy', color: '#2062a8', count: 2, average: 4 },
+            { label: 'Dry', color: '#a8c2c9', count: 2, average: 7 },
+            { label: 'Rainy', color: '#5b7f8c', count: 2, average: 4 },
         ]);
     });
 
@@ -97,7 +97,7 @@ describe('computeMoodByWeatherBuckets', () => {
 
         const buckets = computeMoodByWeatherBuckets(data);
 
-        expect(buckets).toEqual([{ label: 'Dry', color: '#7fa8d9', count: 3, average: 6.67 }]);
+        expect(buckets).toEqual([{ label: 'Dry', color: '#a8c2c9', count: 3, average: 6.67 }]);
     });
 
     it('omits a bucket entirely when it has no data, rather than returning it empty', () => {
@@ -108,7 +108,7 @@ describe('computeMoodByWeatherBuckets', () => {
 
         const buckets = computeMoodByWeatherBuckets(data);
 
-        expect(buckets).toEqual([{ label: 'Dry', color: '#7fa8d9', count: 2, average: 7 }]);
+        expect(buckets).toEqual([{ label: 'Dry', color: '#a8c2c9', count: 2, average: 7 }]);
     });
 
     it('returns an empty array when no moods have weather data', () => {
@@ -126,6 +126,6 @@ describe('computeMoodByWeatherBuckets', () => {
 
         const buckets = computeMoodByWeatherBuckets(data);
 
-        expect(buckets).toEqual([{ label: 'Dry', color: '#7fa8d9', count: 1, average: 8 }]);
+        expect(buckets).toEqual([{ label: 'Dry', color: '#a8c2c9', count: 1, average: 8 }]);
     });
 });

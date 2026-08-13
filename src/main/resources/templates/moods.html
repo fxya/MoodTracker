@@ -5,53 +5,57 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
   <link rel="stylesheet" href="/css/style.css"/>
 </head>
-<body>
-<div class="container container-wide">
-  <h1>All Saved Moods</h1>
-  <table>
-    <thead>
-    <tr>
-      <th>Date</th>
-      <th>Rating</th>
-      <th>Mood</th>
-    </tr>
-    </thead>
-    <tbody>
-    <!-- Content will be populated by JavaScript -->
-    </tbody>
-  </table>
-  <h2>Mood Trend</h2>
-  <div class="chart-wrap">
+<body class="min-h-screen bg-bg font-sans text-ink antialiased">
+<div class="mx-auto max-w-3xl px-4 py-10">
+  <h1 class="mb-6 font-display text-2xl text-ink">All Saved Moods</h1>
+
+  <div class="mb-8 overflow-x-auto rounded-2xl border border-border-soft bg-surface shadow-sm">
+    <table class="w-full border-collapse text-sm">
+      <thead>
+      <tr class="border-b border-border-soft text-left text-xs text-ink-muted">
+        <th class="px-4 py-3 font-semibold">Date</th>
+        <th class="px-4 py-3 font-semibold">Rating</th>
+        <th class="px-4 py-3 font-semibold">Mood</th>
+      </tr>
+      </thead>
+      <tbody>
+      <!-- Content will be populated by JavaScript -->
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="mb-4 font-display text-lg text-ink">Mood Trend</h2>
+  <div class="relative mb-8 rounded-2xl border border-border-soft bg-surface p-4 shadow-sm">
     <canvas id="moodTrendChart"></canvas>
   </div>
 
-  <div class="empty-state" id="weatherEmptyState" style="display: none;">
-    <p>No weather data recorded yet. Set a location in <a href="/settings">Settings</a> to start tracking weather with your moods.</p>
+  <div class="mb-8 rounded-2xl border border-dashed border-border px-6 py-10 text-center text-sm text-ink-muted" id="weatherEmptyState" style="display: none;">
+    <p>No weather data recorded yet. Set a location in <a class="font-semibold text-accent hover:text-accent-deep" href="/settings">Settings</a> to start tracking weather with your moods.</p>
   </div>
 
   <div id="temperatureSection">
-    <h2>Temperature Trend</h2>
-    <div class="chart-wrap">
+    <h2 class="mb-4 font-display text-lg text-ink">Temperature Trend</h2>
+    <div class="relative mb-8 rounded-2xl border border-border-soft bg-surface p-4 shadow-sm">
       <canvas id="temperatureChart"></canvas>
     </div>
   </div>
 
   <div id="precipitationSection">
-    <h2>Precipitation Trend</h2>
-    <div class="chart-wrap">
+    <h2 class="mb-4 font-display text-lg text-ink">Precipitation Trend</h2>
+    <div class="relative mb-8 rounded-2xl border border-border-soft bg-surface p-4 shadow-sm">
       <canvas id="precipitationChart"></canvas>
     </div>
   </div>
 
   <div id="correlationSection">
-    <h2>Mood by Weather</h2>
-    <p class="hero-tagline" id="correlationCaption"></p>
-    <div class="chart-wrap">
+    <h2 class="mb-4 font-display text-lg text-ink">Mood by Weather</h2>
+    <p class="mb-4 text-sm text-ink-faint" id="correlationCaption"></p>
+    <div class="relative mb-8 rounded-2xl border border-border-soft bg-surface p-4 shadow-sm">
       <canvas id="correlationChart"></canvas>
     </div>
   </div>
 
-  <div><a class="btn btn-secondary" href="/moodtracker">Return</a></div>
+  <div><a class="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink" href="/moodtracker">Return</a></div>
 </div>
 </body>
 <script type="module" src="/js/moods.js"></script>

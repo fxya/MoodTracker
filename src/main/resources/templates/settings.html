@@ -5,85 +5,91 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
     <link rel="stylesheet" th:href="@{/css/style.css}"/>
 </head>
-<body>
-    <div class="container">
+<body class="min-h-screen bg-bg font-sans text-ink antialiased">
+    <div class="mx-auto max-w-xl px-4 py-10">
         <div th:replace="~{fragments/header :: backHeader}"></div>
 
-        <h1>Settings</h1>
+        <h1 class="mb-6 font-display text-2xl text-ink">Settings</h1>
 
-        <div class="alert alert-success" th:if="${settingsSaved}">Settings saved.</div>
-        <div class="alert alert-danger" th:if="${settingsError}" th:text="${settingsError}">Settings Error</div>
+        <div class="mb-4 rounded-lg border border-success-border bg-success-bg px-4 py-2.5 text-sm text-success" data-testid="alert-success" th:if="${settingsSaved}">Settings saved.</div>
+        <div class="mb-4 rounded-lg border border-danger-border bg-danger-bg px-4 py-2.5 text-sm text-danger" data-testid="alert-danger" th:if="${settingsError}" th:text="${settingsError}">Settings Error</div>
 
-        <form th:action="@{/settings}" method="post">
-            <div>
-                <label for="location">Location:</label>
-                <input type="text" id="location" name="location" th:value="${location}" placeholder="e.g. London, UK"/>
+        <form th:action="@{/settings}" method="post" class="rounded-2xl border border-border-soft bg-surface p-6 shadow-sm">
+            <div class="mb-2">
+                <label for="location" class="mb-1.5 block text-xs font-semibold text-ink-muted">Location:</label>
+                <input type="text" id="location" name="location" th:value="${location}" placeholder="e.g. London, UK"
+                       class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
             </div>
-            <p class="hero-tagline">
+            <p class="mb-4 text-sm text-ink-faint">
                 Used to look up the weather whenever you log a mood. Leave blank to skip weather tracking.
             </p>
-            <div>
-                <label for="time-zone">Time zone:</label>
-                <select id="time-zone" name="timeZone">
+            <div class="mb-2">
+                <label for="time-zone" class="mb-1.5 block text-xs font-semibold text-ink-muted">Time zone:</label>
+                <select id="time-zone" name="timeZone"
+                        class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft">
                     <option value="">Use server default</option>
                     <option th:each="zone : ${availableTimeZones}"
                             th:value="${zone}" th:text="${zone}" th:selected="${zone == timeZone}">Zone</option>
                 </select>
             </div>
-            <p class="hero-tagline">
+            <p class="mb-5 text-sm text-ink-faint">
                 Used to show mood dates and times in your own time zone rather than the server's.
             </p>
-            <button type="submit" class="btn btn-primary">Save Settings</button>
+            <button type="submit" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-deep">Save Settings</button>
         </form>
 
-        <div th:if="${location != null and !#strings.isEmpty(location)}">
-            <h2>Backfill Weather</h2>
+        <div class="mt-8" th:if="${location != null and !#strings.isEmpty(location)}">
+            <h2 class="mb-4 font-display text-lg text-ink">Backfill Weather</h2>
 
-            <div class="alert alert-success" th:if="${backfillMessage}" th:text="${backfillMessage}">Backfill Message</div>
-            <div class="alert alert-danger" th:if="${backfillError}" th:text="${backfillError}">Backfill Error</div>
+            <div class="mb-4 rounded-lg border border-success-border bg-success-bg px-4 py-2.5 text-sm text-success" data-testid="alert-success" th:if="${backfillMessage}" th:text="${backfillMessage}">Backfill Message</div>
+            <div class="mb-4 rounded-lg border border-danger-border bg-danger-bg px-4 py-2.5 text-sm text-danger" data-testid="alert-danger" th:if="${backfillError}" th:text="${backfillError}">Backfill Error</div>
 
-            <p class="hero-tagline">
+            <p class="mb-4 text-sm text-ink-faint">
                 Fill in weather for moods you logged before setting a location, using your current location.
             </p>
             <form th:action="@{/settings/backfill-weather}" method="post">
-                <button type="submit" class="btn btn-secondary">Backfill Weather</button>
+                <button type="submit" class="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink">Backfill Weather</button>
             </form>
         </div>
 
-        <h2>Change Password</h2>
+        <h2 class="mt-8 mb-4 font-display text-lg text-ink">Change Password</h2>
 
-        <div class="alert alert-success" th:if="${passwordChanged}">Password changed.</div>
-        <div class="alert alert-danger" th:if="${passwordError}" th:text="${passwordError}">Password Error</div>
+        <div class="mb-4 rounded-lg border border-success-border bg-success-bg px-4 py-2.5 text-sm text-success" data-testid="alert-success" th:if="${passwordChanged}">Password changed.</div>
+        <div class="mb-4 rounded-lg border border-danger-border bg-danger-bg px-4 py-2.5 text-sm text-danger" data-testid="alert-danger" th:if="${passwordError}" th:text="${passwordError}">Password Error</div>
 
-        <form th:action="@{/settings/password}" method="post">
-            <div>
-                <label for="current-password">Current password:</label>
-                <input type="password" id="current-password" name="currentPassword" required/>
+        <form th:action="@{/settings/password}" method="post" class="rounded-2xl border border-border-soft bg-surface p-6 shadow-sm">
+            <div class="mb-4">
+                <label for="current-password" class="mb-1.5 block text-xs font-semibold text-ink-muted">Current password:</label>
+                <input type="password" id="current-password" name="currentPassword" required
+                       class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
             </div>
-            <div>
-                <label for="new-password">New password:</label>
-                <input type="password" id="new-password" name="newPassword" required/>
+            <div class="mb-4">
+                <label for="new-password" class="mb-1.5 block text-xs font-semibold text-ink-muted">New password:</label>
+                <input type="password" id="new-password" name="newPassword" required
+                       class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
             </div>
-            <div>
-                <label for="confirm-password">Confirm new password:</label>
-                <input type="password" id="confirm-password" name="confirmPassword" required/>
+            <div class="mb-5">
+                <label for="confirm-password" class="mb-1.5 block text-xs font-semibold text-ink-muted">Confirm new password:</label>
+                <input type="password" id="confirm-password" name="confirmPassword" required
+                       class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
             </div>
-            <button type="submit" class="btn btn-primary">Change Password</button>
+            <button type="submit" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-deep">Change Password</button>
         </form>
 
-        <h2>Danger Zone</h2>
+        <h2 class="mt-8 mb-4 font-display text-lg text-danger">Danger Zone</h2>
 
-        <div class="alert alert-danger" th:if="${deleteError}" th:text="${deleteError}">Delete Error</div>
+        <div class="mb-4 rounded-lg border border-danger-border bg-danger-bg px-4 py-2.5 text-sm text-danger" data-testid="alert-danger" th:if="${deleteError}" th:text="${deleteError}">Delete Error</div>
 
-        <div class="danger-zone">
-            <p>Deleting your account permanently removes it and every mood you've logged. This cannot be undone.</p>
+        <div class="rounded-2xl border border-danger-border bg-danger-bg p-6">
+            <p class="mb-4 text-sm text-danger">Deleting your account permanently removes it and every mood you've logged. This cannot be undone.</p>
             <form th:action="@{/settings/delete-account}" method="post"
                   onsubmit="return confirm('Delete your account and all your moods? This cannot be undone.');">
-                <div>
-                    <label for="delete-password">Password:</label>
-                    <input type="password" id="delete-password" name="password" required/>
+                <div class="mb-4">
+                    <label for="delete-password" class="mb-1.5 block text-xs font-semibold text-ink-muted">Password:</label>
+                    <input type="password" id="delete-password" name="password" required
+                           class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"/>
                 </div>
-                <button type="submit" class="btn btn-danger">Delete Account</button>
+                <button type="submit" class="rounded-lg bg-danger px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90">Delete Account</button>
             </form>
         </div>
     </div>

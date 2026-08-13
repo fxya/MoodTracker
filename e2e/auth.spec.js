@@ -12,7 +12,9 @@ test('register redirects to login with a success message, then login lands on th
     await page.click('button:has-text("Register")');
 
     await page.waitForURL('**/login');
-    await expect(page.locator('.alert-success')).toContainText('Registration successful');
+    await expect(page.locator('[data-testid="alert-success"]')).toContainText(
+        'Registration successful',
+    );
 
     await page.fill('#username', username);
     await page.fill('#password', TEST_PASSWORD);
@@ -35,7 +37,9 @@ test('wrong password shows an error and does not log in', async ({ page }) => {
     await page.click('button:has-text("Log in")');
 
     await page.waitForURL('**/login?error**');
-    await expect(page.locator('.alert-danger')).toContainText('Invalid username or password');
+    await expect(page.locator('[data-testid="alert-danger"]')).toContainText(
+        'Invalid username or password',
+    );
 });
 
 test('logout returns to login with a logged-out message', async ({ page }) => {
@@ -44,5 +48,5 @@ test('logout returns to login with a logged-out message', async ({ page }) => {
     await page.click('button:has-text("Logout")');
 
     await page.waitForURL('**/login?logout**');
-    await expect(page.locator('.alert-success')).toContainText('logged out');
+    await expect(page.locator('[data-testid="alert-success"]')).toContainText('logged out');
 });

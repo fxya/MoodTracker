@@ -6,14 +6,14 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
     <link rel="stylesheet" href="/css/style.css"/>
 </head>
-<body class="centered-page">
-    <div class="container hero">
-        <div class="brand-mark" aria-hidden="true">🙂</div>
-        <h1>Mood Tracker</h1>
-        <p class="hero-tagline">Track how you feel, day by day, and notice the patterns.</p>
-        <div class="hero-actions">
-            <a class="btn btn-primary" href="/login">Login</a>
-            <a class="btn btn-secondary" href="/register">Register</a>
+<body class="flex min-h-screen items-center justify-center bg-bg p-6 font-sans text-ink antialiased">
+    <div class="w-full max-w-md rounded-2xl border border-border-soft bg-surface p-8 text-center shadow-sm">
+        <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-surface-alt text-2xl" aria-hidden="true">🙂</div>
+        <h1 class="font-display text-3xl text-ink">Mood Tracker</h1>
+        <p class="mt-2 mb-6 text-sm text-ink-muted">Track how you feel, day by day, and notice the patterns.</p>
+        <div class="flex flex-wrap justify-center gap-3">
+            <a class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-deep" href="/login">Login</a>
+            <a class="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-ink-muted transition-colors hover:bg-surface-alt hover:text-ink" href="/register">Register</a>
         </div>
     </div>
 </body>
