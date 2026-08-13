@@ -10,6 +10,8 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -31,8 +33,20 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
   private final ConcurrentHashMap<String, CopyOnWriteArrayList<Instant>> attemptsByKey =
       new ConcurrentHashMap<>();
 
-  public AuthRateLimitFilter() {
-    this(20, Duration.ofMinutes(5));
+  // Configurable (defaults unchanged) so the Playwright-driven e2e suite can raise
+  // this well above what real credential-stuffing traffic would ever need - the
+  // suite's own register/login volume, run at full parallelism, blows straight
+  // through 20/5min and starts failing tests with 429s that have nothing to do
+  // with what they're actually testing. See playwright.config.js's webServer.env.
+  // @Autowired is required, not just conventional, now that a second (package-
+  // private) constructor exists for tests - without it Spring can't tell which
+  // one to wire and falls back to expecting a no-arg constructor that doesn't
+  // exist, failing bean creation entirely.
+  @Autowired
+  public AuthRateLimitFilter(
+      @Value("${app.auth-rate-limit.max-attempts:20}") int maxAttempts,
+      @Value("${app.auth-rate-limit.window-minutes:5}") long windowMinutes) {
+    this(maxAttempts, Duration.ofMinutes(windowMinutes));
   }
 
   // Package-private: lets tests use a small window/limit instead of waiting on

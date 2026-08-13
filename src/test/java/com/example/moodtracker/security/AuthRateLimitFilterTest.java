@@ -108,6 +108,23 @@ class AuthRateLimitFilterTest {
     verify(laterResponse, never()).setStatus(429);
   }
 
+  // The (int, long) constructor is the one Spring actually wires via @Value
+  // (see playwright.config.js's webServer.env for why the e2e suite raises
+  // it) - this just confirms it delegates correctly to the same behavior
+  // already exercised above via the (int, Duration) constructor.
+  @Test
+  void publicConstructorConvertsWindowMinutesToDuration() throws Exception {
+    AuthRateLimitFilter filter = new AuthRateLimitFilter(1, 5L);
+    String ip = "4.4.4.4";
+
+    filter.doFilter(request("POST", "/login", ip), response(), filterChain);
+
+    HttpServletResponse secondResponse = response();
+    filter.doFilter(request("POST", "/login", ip), secondResponse, filterChain);
+
+    verify(secondResponse).setStatus(429);
+  }
+
   private HttpServletRequest request(String method, String uri, String remoteAddr) {
     HttpServletRequest request = org.mockito.Mockito.mock(HttpServletRequest.class);
     when(request.getMethod()).thenReturn(method);
