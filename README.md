@@ -1,5 +1,7 @@
 # MoodTracker
 
+[![CI](https://github.com/fxya/MoodTracker/actions/workflows/ci.yml/badge.svg)](https://github.com/fxya/MoodTracker/actions/workflows/ci.yml)
+
 A personal mood-tracking web app. Log a mood with a 1-10 rating and notes, and
 MoodTracker automatically saves the local weather (temperature and
 precipitation) alongside it, so you can look back and see whether the two
