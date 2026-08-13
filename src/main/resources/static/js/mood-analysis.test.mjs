@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { formatDateTime, formatDate, buildSeries, computeMoodByWeatherBuckets } from './mood-analysis.js';
+import {
+    formatDateTime,
+    formatDate,
+    buildSeries,
+    computeMoodByWeatherBuckets,
+} from './mood-analysis.js';
 
 describe('formatDateTime', () => {
     it('formats a date as dd-MMM-yyyy HH:mm', () => {
@@ -28,10 +33,10 @@ describe('buildSeries', () => {
         const data = [
             { date: '2026-01-03T00:00:00Z', moodRating: 5 },
             { date: '2026-01-01T00:00:00Z', moodRating: 8 },
-            { date: '2026-01-02T00:00:00Z', moodRating: 6 }
+            { date: '2026-01-02T00:00:00Z', moodRating: 6 },
         ];
 
-        const { labels, values } = buildSeries(data, mood => mood.moodRating);
+        const { labels, values } = buildSeries(data, (mood) => mood.moodRating);
 
         expect(labels).toEqual(['2026-01-01', '2026-01-02', '2026-01-03']);
         expect(values).toEqual([8, 6, 5]);
@@ -41,10 +46,10 @@ describe('buildSeries', () => {
         const data = [
             { date: '2026-01-01T00:00:00Z', moodRating: 5 },
             { date: '2026-01-02T00:00:00Z', moodRating: null },
-            { date: '2026-01-03T00:00:00Z' }
+            { date: '2026-01-03T00:00:00Z' },
         ];
 
-        const { labels, values } = buildSeries(data, mood => mood.moodRating);
+        const { labels, values } = buildSeries(data, (mood) => mood.moodRating);
 
         expect(labels).toEqual(['2026-01-01']);
         expect(values).toEqual([5]);
@@ -53,16 +58,16 @@ describe('buildSeries', () => {
     it('drops entries with an unparseable date', () => {
         const data = [
             { date: 'not-a-date', moodRating: 5 },
-            { date: '2026-01-01T00:00:00Z', moodRating: 8 }
+            { date: '2026-01-01T00:00:00Z', moodRating: 8 },
         ];
 
-        const { values } = buildSeries(data, mood => mood.moodRating);
+        const { values } = buildSeries(data, (mood) => mood.moodRating);
 
         expect(values).toEqual([8]);
     });
 
     it('returns empty arrays for an empty mood list', () => {
-        expect(buildSeries([], mood => mood.moodRating)).toEqual({ labels: [], values: [] });
+        expect(buildSeries([], (mood) => mood.moodRating)).toEqual({ labels: [], values: [] });
     });
 });
 
@@ -72,14 +77,14 @@ describe('computeMoodByWeatherBuckets', () => {
             { moodRating: 8, weather: { precipitationMm: 0 } },
             { moodRating: 6, weather: { precipitationMm: 0 } },
             { moodRating: 3, weather: { precipitationMm: 5 } },
-            { moodRating: 5, weather: { precipitationMm: 2 } }
+            { moodRating: 5, weather: { precipitationMm: 2 } },
         ];
 
         const buckets = computeMoodByWeatherBuckets(data);
 
         expect(buckets).toEqual([
             { label: 'Dry', color: '#7fa8d9', count: 2, average: 7 },
-            { label: 'Rainy', color: '#2062a8', count: 2, average: 4 }
+            { label: 'Rainy', color: '#2062a8', count: 2, average: 4 },
         ]);
     });
 
@@ -87,7 +92,7 @@ describe('computeMoodByWeatherBuckets', () => {
         const data = [
             { moodRating: 8, weather: { precipitationMm: 0 } },
             { moodRating: 7, weather: { precipitationMm: 0 } },
-            { moodRating: 5, weather: { precipitationMm: 0 } }
+            { moodRating: 5, weather: { precipitationMm: 0 } },
         ];
 
         const buckets = computeMoodByWeatherBuckets(data);
@@ -98,7 +103,7 @@ describe('computeMoodByWeatherBuckets', () => {
     it('omits a bucket entirely when it has no data, rather than returning it empty', () => {
         const data = [
             { moodRating: 8, weather: { precipitationMm: 0 } },
-            { moodRating: 6, weather: { precipitationMm: 0 } }
+            { moodRating: 6, weather: { precipitationMm: 0 } },
         ];
 
         const buckets = computeMoodByWeatherBuckets(data);
@@ -116,7 +121,7 @@ describe('computeMoodByWeatherBuckets', () => {
         const data = [
             { moodRating: 8, weather: { precipitationMm: 0 } },
             { moodRating: null, weather: { precipitationMm: 0 } },
-            { moodRating: 5, weather: { precipitationMm: null } }
+            { moodRating: 5, weather: { precipitationMm: null } },
         ];
 
         const buckets = computeMoodByWeatherBuckets(data);

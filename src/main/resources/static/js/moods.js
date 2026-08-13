@@ -4,8 +4,8 @@
 // mood-analysis.js, loaded before this file.
 document.addEventListener('DOMContentLoaded', function () {
     fetch('/api/moods')
-        .then(response => response.json())
-        .then(data => {
+        .then((response) => response.json())
+        .then((data) => {
             renderTable(data);
             renderMoodChart(data);
             renderWeatherCharts(data);
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function renderTable(data) {
     const tableBody = document.querySelector('tbody');
-    data.forEach(mood => {
+    data.forEach((mood) => {
         const row = document.createElement('tr');
         const dateCell = document.createElement('td');
         const ratingCell = document.createElement('td');
@@ -23,7 +23,8 @@ function renderTable(data) {
 
         const date = new Date(mood.date);
         dateCell.textContent = Number.isNaN(date.getTime()) ? mood.date : formatDateTime(date);
-        ratingCell.textContent = mood.moodRating !== null && mood.moodRating !== undefined ? mood.moodRating : "N/A";
+        ratingCell.textContent =
+            mood.moodRating !== null && mood.moodRating !== undefined ? mood.moodRating : 'N/A';
         moodCell.textContent = mood.mood;
 
         row.appendChild(dateCell);
@@ -44,50 +45,52 @@ function renderLineChart(canvasId, labels, values, { color, fillColor, label, su
         type: 'line',
         data: {
             labels: labels,
-            datasets: [{
-                label: label,
-                data: values,
-                borderColor: color,
-                backgroundColor: fillColor,
-                pointBackgroundColor: color,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                borderWidth: 2,
-                tension: 0.25,
-                fill: true
-            }]
+            datasets: [
+                {
+                    label: label,
+                    data: values,
+                    borderColor: color,
+                    backgroundColor: fillColor,
+                    pointBackgroundColor: color,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    borderWidth: 2,
+                    tension: 0.25,
+                    fill: true,
+                },
+            ],
         },
         options: {
             plugins: {
                 legend: {
-                    display: false
-                }
+                    display: false,
+                },
             },
             scales: {
                 y: {
                     beginAtZero: true,
                     suggestedMax: suggestedMax,
                     grid: {
-                        color: '#e3ded6'
-                    }
+                        color: '#e3ded6',
+                    },
                 },
                 x: {
                     grid: {
-                        display: false
-                    }
-                }
-            }
-        }
+                        display: false,
+                    },
+                },
+            },
+        },
     });
 }
 
 function renderMoodChart(data) {
-    const { labels, values } = buildSeries(data, mood => mood.moodRating);
+    const { labels, values } = buildSeries(data, (mood) => mood.moodRating);
     renderLineChart('moodTrendChart', labels, values, {
         color: '#5b52d6',
         fillColor: 'rgba(91, 82, 214, 0.12)',
         label: 'Mood Rating',
-        suggestedMax: 10
+        suggestedMax: 10,
     });
 }
 
@@ -95,9 +98,9 @@ function renderMoodChart(data) {
 // rating (and from each other), so each gets its own chart with its own
 // y-axis rather than sharing one - see the dataviz "one axis" rule.
 function renderWeatherCharts(data) {
-    const withWeather = data.filter(mood => mood.weather);
-    const temperature = buildSeries(withWeather, mood => mood.weather.temperatureC);
-    const precipitation = buildSeries(withWeather, mood => mood.weather.precipitationMm);
+    const withWeather = data.filter((mood) => mood.weather);
+    const temperature = buildSeries(withWeather, (mood) => mood.weather.temperatureC);
+    const precipitation = buildSeries(withWeather, (mood) => mood.weather.precipitationMm);
 
     const temperatureSection = document.getElementById('temperatureSection');
     const precipitationSection = document.getElementById('precipitationSection');
@@ -114,7 +117,7 @@ function renderWeatherCharts(data) {
         renderLineChart('temperatureChart', temperature.labels, temperature.values, {
             color: '#b3590a',
             fillColor: 'rgba(179, 89, 10, 0.12)',
-            label: 'Temperature (°C)'
+            label: 'Temperature (°C)',
         });
     }
 
@@ -122,7 +125,7 @@ function renderWeatherCharts(data) {
         renderLineChart('precipitationChart', precipitation.labels, precipitation.values, {
             color: '#2062a8',
             fillColor: 'rgba(32, 98, 168, 0.12)',
-            label: 'Precipitation (mm)'
+            label: 'Precipitation (mm)',
         });
     }
 }
@@ -145,40 +148,42 @@ function renderCorrelationChart(data) {
     }
 
     section.style.display = '';
-    caption.textContent = buckets.map(bucket => `${bucket.label}: n=${bucket.count}`).join(' · ');
+    caption.textContent = buckets.map((bucket) => `${bucket.label}: n=${bucket.count}`).join(' · ');
 
     new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
-            labels: buckets.map(bucket => bucket.label),
-            datasets: [{
-                label: 'Average Mood Rating',
-                data: buckets.map(bucket => bucket.average),
-                backgroundColor: buckets.map(bucket => bucket.color),
-                borderRadius: 4,
-                maxBarThickness: 96
-            }]
+            labels: buckets.map((bucket) => bucket.label),
+            datasets: [
+                {
+                    label: 'Average Mood Rating',
+                    data: buckets.map((bucket) => bucket.average),
+                    backgroundColor: buckets.map((bucket) => bucket.color),
+                    borderRadius: 4,
+                    maxBarThickness: 96,
+                },
+            ],
         },
         options: {
             plugins: {
                 legend: {
-                    display: false
-                }
+                    display: false,
+                },
             },
             scales: {
                 y: {
                     beginAtZero: true,
                     max: 10,
                     grid: {
-                        color: '#e3ded6'
-                    }
+                        color: '#e3ded6',
+                    },
                 },
                 x: {
                     grid: {
-                        display: false
-                    }
-                }
-            }
-        }
+                        display: false,
+                    },
+                },
+            },
+        },
     });
 }

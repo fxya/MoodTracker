@@ -1,12 +1,15 @@
 {
-  "name": "moodtracker-js-tests",
+  "name": "moodtracker-frontend-tooling",
   "private": true,
   "type": "commonjs",
-  "description": "Unit tests for the pure JS helpers behind the /moods charts (src/main/resources/static/js). Not part of the Gradle build or the app runtime - the app itself ships plain <script> tags with no bundler.",
+  "description": "JS unit tests (src/main/resources/static/js) and Prettier formatting for JS/CSS. Not part of the Gradle build or the app runtime - the app itself ships plain <script>/<link> tags with no bundler.",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "format": "prettier --write \"src/main/resources/static/js/**/*.{js,mjs}\" \"src/main/resources/static/css/**/*.css\"",
+    "format:check": "prettier --check \"src/main/resources/static/js/**/*.{js,mjs}\" \"src/main/resources/static/css/**/*.css\""
   },
   "devDependencies": {
+    "prettier": "^3.0.0",
     "vitest": "^3.0.0"
   }
 }
