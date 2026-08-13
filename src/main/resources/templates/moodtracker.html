@@ -50,6 +50,11 @@
 
         <h2>Your Moods</h2>
 
+        <div class="export-actions">
+            <a class="btn btn-secondary btn-sm" th:href="@{/moodtracker/export/csv}">Export CSV</a>
+            <a class="btn btn-secondary btn-sm" th:href="@{/moodtracker/export/json}">Export JSON</a>
+        </div>
+
         <form th:action="@{/moodtracker}" method="get" class="filter-form">
             <div>
                 <label for="q">Search:</label>

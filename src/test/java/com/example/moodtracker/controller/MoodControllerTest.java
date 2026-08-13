@@ -432,4 +432,67 @@ public class MoodControllerTest {
         () -> moodController.deleteMood(5L, authentication, redirectAttributes));
     verify(moodRepository, never()).delete(any());
   }
+
+  @Test
+  void testExportCsv_includesHeaderAndAllFields() {
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+    Weather weather = new Weather();
+    weather.setTemperatureC(14.5);
+    weather.setPrecipitationMm(0.2);
+    Mood mood = moodWithRating(8, Instant.parse("2026-01-15T10:30:00Z"));
+    mood.setMood("Happy");
+    mood.setNotes("Great day");
+    mood.setWeather(weather);
+    when(moodRepository.findByUserOrderByDateDesc(testUser)).thenReturn(List.of(mood));
+
+    var response = moodController.exportCsv(authentication);
+
+    assertEquals(200, response.getStatusCode().value());
+    assertEquals(
+        "attachment; filename=\"moods.csv\"",
+        response.getHeaders().getFirst("Content-Disposition"));
+    String body = response.getBody();
+    assertTrue(body.startsWith("Date,Mood,Rating,Notes,TemperatureC,PrecipitationMm\r\n"));
+    assertTrue(body.contains("2026-01-15T10:30:00Z,Happy,8,Great day,14.5,0.2\r\n"));
+  }
+
+  @Test
+  void testExportCsv_quotesFieldsContainingCommasOrQuotes() {
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+
+    Mood mood = moodWithRating(5, Instant.parse("2026-01-15T10:30:00Z"));
+    mood.setMood("Okay");
+    mood.setNotes("Busy day, said \"hi\" to a friend");
+    when(moodRepository.findByUserOrderByDateDesc(testUser)).thenReturn(List.of(mood));
+
+    var response = moodController.exportCsv(authentication);
+
+    assertTrue(response.getBody().contains("\"Busy day, said \"\"hi\"\" to a friend\""));
+  }
+
+  @Test
+  void testExportCsv_onlyExportsCurrentUsersMoods() {
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+    when(moodRepository.findByUserOrderByDateDesc(testUser)).thenReturn(Collections.emptyList());
+
+    moodController.exportCsv(authentication);
+
+    verify(moodRepository).findByUserOrderByDateDesc(testUser);
+  }
+
+  @Test
+  void testExportJson_returnsMoodListWithDownloadHeader() {
+    when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+    Mood mood = moodWithRating(7, Instant.parse("2026-01-15T10:30:00Z"));
+    when(moodRepository.findByUserOrderByDateDesc(testUser)).thenReturn(List.of(mood));
+
+    var response = moodController.exportJson(authentication);
+
+    assertEquals(200, response.getStatusCode().value());
+    assertEquals(
+        "attachment; filename=\"moods.json\"",
+        response.getHeaders().getFirst("Content-Disposition"));
+    assertEquals(List.of(mood), response.getBody());
+  }
 }

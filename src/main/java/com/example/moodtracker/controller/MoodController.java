@@ -18,7 +18,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -84,6 +88,70 @@ public class MoodController {
     model.addAttribute("username", user.getUsername());
     model.addAttribute("weeklySummary", computeWeeklySummary(user));
     return "moodtracker"; // Name of the Thymeleaf template
+  }
+
+  // Exports the user's full mood history regardless of the current search/filter/
+  // page - a partial export would be a surprising and unhelpful default for "give
+  // me my data".
+  @GetMapping(value = "/export/csv", produces = "text/csv")
+  public ResponseEntity<String> exportCsv(Authentication authentication) {
+    User user = currentUser(authentication);
+    List<Mood> moods = moodRepository.findByUserOrderByDateDesc(user);
+    return ResponseEntity.ok()
+        .header(
+            HttpHeaders.CONTENT_DISPOSITION,
+            ContentDisposition.attachment().filename("moods.csv").build().toString())
+        .contentType(MediaType.valueOf("text/csv;charset=UTF-8"))
+        .body(toCsv(moods));
+  }
+
+  @GetMapping(value = "/export/json", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<List<Mood>> exportJson(Authentication authentication) {
+    User user = currentUser(authentication);
+    List<Mood> moods = moodRepository.findByUserOrderByDateDesc(user);
+    return ResponseEntity.ok()
+        .header(
+            HttpHeaders.CONTENT_DISPOSITION,
+            ContentDisposition.attachment().filename("moods.json").build().toString())
+        .body(moods);
+  }
+
+  private static String toCsv(List<Mood> moods) {
+    StringBuilder csv =
+        new StringBuilder("Date,Mood,Rating,Notes,TemperatureC,PrecipitationMm\r\n");
+    for (Mood mood : moods) {
+      Weather weather = mood.getWeather();
+      csv.append(csvField(mood.getDate() == null ? null : mood.getDate().toString())).append(',');
+      csv.append(csvField(mood.getMood())).append(',');
+      csv.append(csvField(mood.getMoodRating() == null ? null : mood.getMoodRating().toString()))
+          .append(',');
+      csv.append(csvField(mood.getNotes())).append(',');
+      csv.append(
+              csvField(
+                  weather == null || weather.getTemperatureC() == null
+                      ? null
+                      : weather.getTemperatureC().toString()))
+          .append(',');
+      csv.append(
+          csvField(
+              weather == null || weather.getPrecipitationMm() == null
+                  ? null
+                  : weather.getPrecipitationMm().toString()));
+      csv.append("\r\n");
+    }
+    return csv.toString();
+  }
+
+  // RFC 4180: a field is quoted if it contains a comma, quote, or line break, with
+  // any embedded quotes doubled up.
+  private static String csvField(String value) {
+    if (value == null) {
+      return "";
+    }
+    boolean needsQuoting =
+        value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r");
+    String escaped = value.replace("\"", "\"\"");
+    return needsQuoting ? "\"" + escaped + "\"" : escaped;
   }
 
   // Handle submission of a new mood
