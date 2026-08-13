@@ -53,8 +53,9 @@ every user only ever sees their own data.
 `GET /actuator/health` is reachable without authentication and returns a bare
 `{"status":"UP"}` (or `"DOWN"` if the database is unreachable) - useful for a
 monitoring script, cron job, or container healthcheck against a Pi-hosted
-instance. Nothing else under `/actuator` is exposed - no metrics, env, beans,
-etc. - only the liveness/readiness signal.
+instance, and is what the Dockerfile's `HEALTHCHECK` directive polls (see
+"Docker" below). Nothing else under `/actuator` is exposed - no metrics, env,
+beans, etc. - only the liveness/readiness signal.
 
 ## Forgot password
 
@@ -265,6 +266,13 @@ won't resolve to the host machine from inside the container - use the host's
 address, a linked container, or a managed database instead), and outbound
 HTTPS access to Open-Meteo for weather lookups. No API key is required for
 Open-Meteo.
+
+The image has a `HEALTHCHECK` that polls `/actuator/health` (see "Health
+check" above) every 30s, so `docker ps` shows `healthy`/`unhealthy` next to
+the container once it's had time to start up. For the full status history:
+```bash
+docker inspect --format='{{.State.Health.Status}}' moodtracker
+```
 
 To stop and remove the container:
 ```bash

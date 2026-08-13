@@ -48,7 +48,12 @@ public class WebSecurityConfig {
                         "/actuator/health",
                         "/css/**",
                         "/js/**",
-                        "/images/**")
+                        "/images/**",
+                        "/favicon.svg",
+                        "/manifest.webmanifest",
+                        "/service-worker.js",
+                        "/apple-touch-icon.png",
+                        "/icons/**")
                     .permitAll()
                     .anyRequest()
                     .authenticated())

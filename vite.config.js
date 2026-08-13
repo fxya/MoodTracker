@@ -10,6 +10,11 @@ import tailwindcss from '@tailwindcss/vite';
 // the pipeline compiles to byte-identical behavior.
 export default defineConfig({
     plugins: [tailwindcss()],
+    // manifest.webmanifest, service-worker.js, and the PWA icons live here and
+    // are copied byte-for-byte into outDir - unlike rollupOptions.input, this
+    // bypasses Rollup's ESM bundling, which matters for service-worker.js:
+    // it must stay a plain classic script with no import/export syntax.
+    publicDir: 'frontend/public',
     build: {
         outDir: 'src/main/resources/static',
         // Default true would wipe the hand-authored favicon.svg that also
@@ -19,6 +24,7 @@ export default defineConfig({
             input: {
                 app: 'frontend/css/app.css',
                 moods: 'frontend/js/moods.js',
+                'register-sw': 'frontend/js/register-sw.js',
             },
             output: {
                 entryFileNames: 'js/[name].js',
