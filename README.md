@@ -11,18 +11,22 @@ every user only ever sees their own data.
 ## Features
 
 **Mood logging**
-- Record a mood with a 1-10 rating and free-text notes.
-- Edit or delete any past entry.
+- Record a mood with a 1-10 rating, an optional quick-select tag (Happy,
+  Sad, Anxious, Calm, Excited, Angry, Tired, Content), and free-text notes.
+- Edit or delete any past entry - editing covers the mood text, rating,
+  tag, and notes.
 - Search mood history by text (mood or notes) and filter by rating range,
   with pagination.
-- A weekly summary card shows your average rating for the past 7 days
-  and how it compares to the week before.
+- A weekly summary card shows your average rating for the past 7 days, how
+  it compares to the week before, and your most common tag this week.
 
 **Weather**
 - Set a location under Settings, and current weather at that location is
   looked up and saved automatically with every mood you log, via
   [Open-Meteo](https://open-meteo.com/) (free, no API key required).
-- Weather is shown inline on each mood entry.
+- Weather is shown inline on each mood entry, and can be corrected by hand
+  from the edit form if the auto-fetched value is wrong (e.g. you were
+  traveling).
 - If weather lookup fails or no location is set, the mood still saves -
   weather is a bonus, never a blocker.
 - Geocoded coordinates for a location are cached for a week, so logging
@@ -35,10 +39,24 @@ every user only ever sees their own data.
 - Mood rating over time.
 - Temperature and precipitation over time.
 - Average mood on dry days vs. rainy days.
+- A GitHub-style calendar heatmap of daily average mood, at a glance across
+  weeks/months.
+- Every chart has an accessible, screen-reader-friendly data table alongside
+  it, since a `<canvas>` chart has no text content of its own.
 
-**Export**
+**Export & import**
 - Download your full mood history as CSV or JSON from the mood tracker
   page.
+- Import mood history from a MoodTracker CSV export, to restore a backup or
+  migrate from another install.
+
+**Appearance**
+- Switch between light, dark, and system theme from Settings - the choice
+  is remembered per browser.
+- Installable as a PWA ("Add to Home Screen" on mobile or desktop Chrome):
+  has an app icon/manifest and a service worker that caches the static app
+  shell for faster repeat loads. Mood data itself always comes from the
+  server, not a cache, so it's never stale or usable fully offline.
 
 **Account**
 - Register and log in; all data is scoped to your own account.
@@ -47,6 +65,27 @@ every user only ever sees their own data.
 - Change your password or delete your account (and everything in it)
   from Settings.
 - Reset a forgotten password via email - see "Forgot password" below.
+
+## Screenshots
+
+**Mood Tracker** - log a mood with a rating and optional tag, see this
+week's summary, and browse/search/export past entries:
+
+![Mood Tracker](docs/screenshots/mood-tracker.png)
+
+**Trends** - mood, temperature, and precipitation over time, mood by
+weather, and the mood calendar heatmap:
+
+![Trends and heatmap](docs/screenshots/trends-and-heatmap.png)
+
+**Settings** - appearance, account, weather backfill, CSV import, and
+account management:
+
+![Settings](docs/screenshots/settings.png)
+
+**Dark mode**:
+
+![Dark mode](docs/screenshots/dark-mode.png)
 
 ## Health check
 
@@ -91,6 +130,9 @@ arrives.
 - Tailwind CSS v4 + Vite (compiles `frontend/` into `src/main/resources/static`,
   wired into the Gradle build - see "Frontend build" below)
 - Chart.js (an npm dependency bundled by Vite, not a CDN script)
+- Progressive Web App: manifest + service worker, installable, caches the
+  static app shell for faster repeat loads
+- Apache Commons CSV for mood import (export is simple enough to hand-write)
 - Open-Meteo for weather data
 - Gradle
 - Docker
@@ -141,10 +183,13 @@ other than `dev`, in addition to overriding the database credentials above.
 ### Login/registration rate limiting
 
 `POST /login`, `POST /register`, and `POST /forgot-password` are rate-limited
-per client IP (20 attempts per 5-minute window, in-memory, reset on restart)
-to blunt naive automated credential-stuffing and account-enumeration
-attempts. It's a single-instance, best-effort deterrent, not a replacement
-for a proper WAF/gateway-level defense in a real deployment.
+per client IP (20 attempts per 5-minute window by default, in-memory, reset
+on restart) to blunt naive automated credential-stuffing and
+account-enumeration attempts. It's a single-instance, best-effort deterrent,
+not a replacement for a proper WAF/gateway-level defense in a real
+deployment. Both numbers are configurable via `APP_AUTH_RATE_LIMIT_MAX_ATTEMPTS`
+/ `APP_AUTH_RATE_LIMIT_WINDOW_MINUTES` if 20/5min doesn't fit your setup (the
+e2e suite raises this itself - see below).
 
 ### Frontend build
 
@@ -173,7 +218,8 @@ is running and configured as described above before running tests.
 is needed for that part.
 
 The pure JS logic behind the `/moods` charts (`frontend/js/mood-analysis.js`:
-series building, dry/rainy bucketing) has its own small Vitest suite:
+series building, dry/rainy bucketing, heatmap data) has its own small Vitest
+suite:
 ```bash
 npm install
 npm test
@@ -207,9 +253,12 @@ instead.
 
 Several tests in `e2e/mood-crud.spec.js` share one logged-in session across
 tests (`test.describe.configure({ mode: 'serial' })`) rather than
-registering/logging in fresh for every single test - a full suite doing that
-would run into the login rate limit described above, since it's a real
-per-IP limit and all e2e traffic comes from the same machine.
+registering/logging in fresh for every single test, to keep the suite's own
+register/login volume down. `playwright.config.js` also raises
+`APP_AUTH_RATE_LIMIT_MAX_ATTEMPTS` for its `webServer` process, since all e2e
+traffic originates from the same machine/IP and would otherwise trip the
+real per-IP limit described above - that's trusted local/CI traffic, not the
+untrusted traffic the limit exists to blunt in production.
 
 ## Code style
 
