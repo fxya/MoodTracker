@@ -125,11 +125,29 @@ function buildHeatmapData(data) {
         .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }
 
+// Slices a full list into one page - used for the /moods "All Saved Moods"
+// table, which otherwise renders the account's entire history in one
+// unbroken list. Charts and the heatmap keep using the full, unpaginated
+// data; only the table itself needs paging. page is 0-based and clamped into
+// range, so a stale page number (e.g. after a mood is deleted elsewhere and
+// the list gets shorter) never produces an empty slice.
+function paginate(items, page, pageSize) {
+    const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+    const clampedPage = Math.min(Math.max(page, 0), totalPages - 1);
+    const start = clampedPage * pageSize;
+    return {
+        pageItems: items.slice(start, start + pageSize),
+        page: clampedPage,
+        totalPages,
+    };
+}
+
 export {
     formatDateTime,
     formatDate,
     buildSeries,
     computeMoodByWeatherBuckets,
     buildHeatmapData,
+    paginate,
     MONTH_ABBREVIATIONS,
 };

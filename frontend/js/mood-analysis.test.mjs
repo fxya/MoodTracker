@@ -5,6 +5,7 @@ import {
     buildSeries,
     computeMoodByWeatherBuckets,
     buildHeatmapData,
+    paginate,
 } from './mood-analysis.js';
 
 describe('formatDateTime', () => {
@@ -185,5 +186,58 @@ describe('buildHeatmapData', () => {
 
     it('returns an empty array for an empty mood list', () => {
         expect(buildHeatmapData([])).toEqual([]);
+    });
+});
+
+describe('paginate', () => {
+    const items = Array.from({ length: 25 }, (_, i) => i);
+
+    it('slices out the requested page', () => {
+        expect(paginate(items, 0, 10)).toEqual({
+            pageItems: items.slice(0, 10),
+            page: 0,
+            totalPages: 3,
+        });
+        expect(paginate(items, 1, 10)).toEqual({
+            pageItems: items.slice(10, 20),
+            page: 1,
+            totalPages: 3,
+        });
+    });
+
+    it('the last page is a partial page', () => {
+        expect(paginate(items, 2, 10)).toEqual({
+            pageItems: items.slice(20, 25),
+            page: 2,
+            totalPages: 3,
+        });
+    });
+
+    it('clamps a page number past the end back to the last page', () => {
+        expect(paginate(items, 99, 10)).toEqual({
+            pageItems: items.slice(20, 25),
+            page: 2,
+            totalPages: 3,
+        });
+    });
+
+    it('clamps a negative page number up to zero', () => {
+        expect(paginate(items, -5, 10)).toEqual({
+            pageItems: items.slice(0, 10),
+            page: 0,
+            totalPages: 3,
+        });
+    });
+
+    it('a list shorter than one page is a single page', () => {
+        expect(paginate([1, 2, 3], 0, 10)).toEqual({
+            pageItems: [1, 2, 3],
+            page: 0,
+            totalPages: 1,
+        });
+    });
+
+    it('an empty list is a single (empty) page, not zero pages', () => {
+        expect(paginate([], 0, 10)).toEqual({ pageItems: [], page: 0, totalPages: 1 });
     });
 });

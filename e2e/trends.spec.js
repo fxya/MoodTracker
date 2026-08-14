@@ -41,6 +41,35 @@ test('mood trend chart has a screen-reader-accessible data table alongside it', 
     await expect(table.locator('tbody tr')).toHaveCount(2);
 });
 
+test('the All Saved Moods table paginates once there are more than one page of entries', async ({
+    page,
+}) => {
+    await registerAndLogin(page);
+    for (let i = 1; i <= 12; i++) {
+        await addMood(page, { text: `Entry ${i}`, rating: 5 });
+    }
+
+    const apiResponse = page.waitForResponse('**/api/moods');
+    await page.goto('/moods');
+    await apiResponse;
+
+    const pagination = page.locator('[data-testid="pagination"]');
+    await expect(pagination).toBeVisible();
+    await expect(page.locator('#allMoodsTable tbody tr')).toHaveCount(10);
+    await expect(page.locator('[data-testid="pagination-status"]')).toHaveText('Page 1 of 2');
+    await expect(page.getByRole('button', { name: 'Previous' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.locator('#allMoodsTable tbody tr')).toHaveCount(2);
+    await expect(page.locator('[data-testid="pagination-status"]')).toHaveText('Page 2 of 2');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+
+    await page.getByRole('button', { name: 'Previous' }).click();
+    await expect(page.locator('#allMoodsTable tbody tr')).toHaveCount(10);
+    await expect(page.locator('[data-testid="pagination-status"]')).toHaveText('Page 1 of 2');
+});
+
 test('mood calendar heatmap renders one cell per day with an aria-label', async ({ page }) => {
     await registerAndLogin(page);
     await addMood(page, { text: 'Only entry', rating: 7 });
