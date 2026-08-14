@@ -191,6 +191,13 @@ function renderLineChart(canvasId, labels, values, { color, fillColor, label, su
                     grid: {
                         color: GRID_COLOR,
                     },
+                    // Same text as the dataset label/aria-label/sr-only table header
+                    // above, so the axis is self-explanatory without relying on a
+                    // reader also having noticed the section heading.
+                    title: {
+                        display: true,
+                        text: label,
+                    },
                 },
                 x: {
                     grid: {
@@ -372,6 +379,10 @@ function renderCorrelationChart(data) {
                     max: 10,
                     grid: {
                         color: GRID_COLOR,
+                    },
+                    title: {
+                        display: true,
+                        text: 'Average Mood Rating',
                     },
                 },
                 x: {
