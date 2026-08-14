@@ -328,3 +328,57 @@ To stop and remove the container:
 docker stop moodtracker
 docker rm moodtracker
 ```
+
+### Docker Compose
+
+For a standing deployment (e.g. on a Raspberry Pi) `docker-compose.yml` is
+easier to live with than the manual steps above - it runs the app and a
+Postgres instance together, with a named volume for the database and a
+restart policy so both come back up after a reboot or crash. Postgres has
+its own healthcheck, and the app container's `depends_on` waits for it, so
+there's no cold-start race against Postgres not being ready yet.
+
+1. Copy the example env file and set a real Postgres password (everything
+   else - SMTP for password-reset email, the host port - is optional; see
+   the comments in the file):
+   ```bash
+   cp .env.example .env
+   ```
+2. Build and start both containers:
+   ```bash
+   docker compose up -d --build
+   ```
+   The app is served on port 80 by default - override with `APP_PORT` in
+   `.env` if that's already taken on your host.
+3. Check on it:
+   ```bash
+   docker compose ps        # shows health status for both containers
+   docker compose logs -f app
+   ```
+4. Stop it (keeps the database volume), or tear down entirely:
+   ```bash
+   docker compose down       # stop and remove containers, keep the db volume
+   docker compose down -v    # also delete the database volume - irreversible
+   ```
+
+### Reaching it at a local URL
+
+Docker itself has no say in this - it's local name resolution. On a
+Raspberry Pi, the simplest option costs nothing: Raspberry Pi OS ships with
+Avahi/mDNS, so the Pi already answers to `<hostname>.local` on the LAN.
+Rename it if you want something friendlier than the default
+(`sudo raspi-config` → System Options → Hostname), then browse to
+`http://<hostname>.local` (port 80 from the Compose setup above needs no
+`:port` suffix). Give the Pi a static DHCP reservation in your router too,
+so the mapping doesn't break if its IP changes. If you already run
+Pi-hole, its **Local DNS Records** feature is a more consistently reliable
+alternative across devices than mDNS.
+
+One caveat: the app is installable as a PWA (see "Appearance" under
+Features), which needs a secure context - HTTPS, or `localhost` specifically.
+Plain `http://<hostname>.local` works fine for everything else, but browsers
+will generally decline to register the service worker or offer an install
+prompt over it. That's only relevant if you want the installable/offline-
+shell behavior; getting HTTPS onto a LAN-only hostname means fronting the
+app with a reverse proxy (e.g. Caddy) and a locally-trusted certificate,
+which is its own separate step beyond what's covered here.

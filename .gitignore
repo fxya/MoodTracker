@@ -24,6 +24,9 @@ playwright-report/
 test-results/
 blob-report/
 
+### Docker Compose (see docker-compose.yml / .env.example) ###
+.env
+
 ### STS ###
 .apt_generated
 .classpath
