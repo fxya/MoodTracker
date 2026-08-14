@@ -9,7 +9,14 @@ import {
     buildSeries,
     computeMoodByWeatherBuckets,
     buildHeatmapData,
+    paginate,
 } from './mood-analysis.js';
+
+// Only the "All Saved Moods" table is paged - charts and the heatmap plot the
+// full history regardless of this.
+const TABLE_PAGE_SIZE = 10;
+let allMoodsData = [];
+let currentTablePage = 0;
 
 // Chart.js draws to a canvas, so its colors are plain JS values, not CSS -
 // they can't pick up the app's `@media (prefers-color-scheme: dark)` tokens
@@ -37,12 +44,22 @@ document.addEventListener('DOMContentLoaded', function () {
     fetch('/api/moods')
         .then((response) => response.json())
         .then((data) => {
-            renderTable(data);
+            allMoodsData = data;
+            renderTable();
             renderMoodChart(data);
             renderHeatmap(data);
             renderWeatherCharts(data);
             renderCorrelationChart(data);
         });
+
+    document.getElementById('allMoodsPrev').addEventListener('click', () => {
+        currentTablePage -= 1;
+        renderTable();
+    });
+    document.getElementById('allMoodsNext').addEventListener('click', () => {
+        currentTablePage += 1;
+        renderTable();
+    });
 });
 
 // Chart.js draws to a canvas, which is opaque to screen readers - this
@@ -84,9 +101,18 @@ function buildDataTable(caption, headers, rows) {
     return wrapper;
 }
 
-function renderTable(data) {
+function renderTable() {
     const tableBody = document.querySelector('#allMoodsTable tbody');
-    data.forEach((mood) => {
+    tableBody.innerHTML = '';
+
+    const { pageItems, page, totalPages } = paginate(
+        allMoodsData,
+        currentTablePage,
+        TABLE_PAGE_SIZE,
+    );
+    currentTablePage = page;
+
+    pageItems.forEach((mood) => {
         const row = document.createElement('tr');
         row.className = 'border-b border-border-soft last:border-0';
         const dateCell = document.createElement('td');
@@ -107,6 +133,13 @@ function renderTable(data) {
         row.appendChild(moodCell);
         tableBody.appendChild(row);
     });
+
+    const pagination = document.getElementById('allMoodsPagination');
+    pagination.style.display = totalPages > 1 ? '' : 'none';
+    document.getElementById('allMoodsPrev').disabled = page === 0;
+    document.getElementById('allMoodsNext').disabled = page >= totalPages - 1;
+    document.getElementById('allMoodsPaginationStatus').textContent =
+        `Page ${page + 1} of ${totalPages}`;
 }
 
 // Single-series trend line: one hue from the app palette, thin 2px line,
